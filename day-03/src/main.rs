@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 enum Move {
     R(i32),
@@ -616,37 +616,43 @@ fn main() {
         Move::L(201),
     ];
 
-    let mut traversed = HashSet::<(i32, i32)>::new();
-    traversed.insert((0, 0));
-    let mut intersections = Vec::<(i32, i32)>::new();
+    let mut traversed = HashMap::<(i32, i32), i32>::new();
+    let mut intersections = Vec::<((i32, i32), i32)>::new();
 
     let mut current_x = 0;
     let mut current_y = 0;
+    let mut steps = 0;
+
+    traversed.insert((current_x, current_y), steps);
 
     for m in line1 {
         match m {
             Move::U(y) => {
                 for _j in 0..y {
-                    traversed.insert((current_x, current_y));
+                    traversed.insert((current_x, current_y), steps);
                     current_y -= 1;
+                    steps += 1;
                 }
             },
             Move::D(y) => {
                 for _j in 0..y {
-                    traversed.insert((current_x, current_y));
+                    traversed.insert((current_x, current_y), steps);
                     current_y += 1;
+                    steps += 1;
                 }
             },
             Move::L(x) => {
                 for _i in 0..x {
-                    traversed.insert((current_x, current_y));
+                    traversed.insert((current_x, current_y), steps);
                     current_x -= 1;
+                    steps += 1;
                 }
             },
             Move::R(x) => {
                 for _i in 0..x {
-                    traversed.insert((current_x, current_y));
+                    traversed.insert((current_x, current_y), steps);
                     current_x += 1;
+                    steps += 1;
                 }
             },
         };
@@ -654,38 +660,47 @@ fn main() {
 
     current_x = 0;
     current_y = 0;
+    steps = 0;
 
     for m in line2 {
         match m {
             Move::U(y) => {
                 for j in 0..y {
                     current_y -= 1;
-                    if traversed.contains(&(current_x, current_y)) {
-                        intersections.push((current_x, current_y));
+                    steps += 1;
+                    if traversed.contains_key(&(current_x, current_y)) {
+                        let other_steps = traversed.get(&(current_x, current_y)).unwrap();
+                        intersections.push(((current_x, current_y), steps+other_steps));
                     }
                 }
             },
             Move::D(y) => {
                 for j in 0..y {
                     current_y += 1;
-                    if traversed.contains(&(current_x, current_y)) {
-                        intersections.push((current_x, current_y));
+                    steps += 1;
+                    if traversed.contains_key(&(current_x, current_y)) {
+                        let other_steps = traversed.get(&(current_x, current_y)).unwrap();
+                        intersections.push(((current_x, current_y), steps+other_steps));
                     }
                 }
             },
             Move::L(x) => {
                 for i in 0..x {
                     current_x -= 1;
-                    if traversed.contains(&(current_x, current_y)) {
-                        intersections.push((current_x, current_y));
+                    steps += 1;
+                    if traversed.contains_key(&(current_x, current_y)) {
+                        let other_steps = traversed.get(&(current_x, current_y)).unwrap();
+                        intersections.push(((current_x, current_y), steps+other_steps));
                     }
                 }
             },
             Move::R(x) => {
                 for i in 0..x {
                     current_x += 1;
-                    if traversed.contains(&(current_x, current_y)) {
-                        intersections.push((current_x, current_y));
+                    steps += 1;
+                    if traversed.contains_key(&(current_x, current_y)) {
+                        let other_steps = traversed.get(&(current_x, current_y)).unwrap();
+                        intersections.push(((current_x, current_y), steps+other_steps));
                     }
                 }
             },
@@ -693,7 +708,7 @@ fn main() {
 
     }
 
-    println!("current_x: {}, current_y: {}", current_x, current_y);
+    println!("current_x: {}, current_y: {}, steps: {}", current_x, current_y, steps);
     println!("traversed.len(): {:?}", traversed.len());
     println!("intersections.len(): {:?}", intersections.len());
     println!("intersections: {:?}", intersections);
