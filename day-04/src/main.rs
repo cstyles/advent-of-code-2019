@@ -12,7 +12,7 @@ fn main() {
     }
 
     println!("valid_passwords.len(): {}", valid_passwords.len());
-    // println!("valid_passwords: {:?}", valid_passwords);
+    println!("valid_passwords: {:?}", valid_passwords);
 }
 
 fn valid(digits: Vec<i32>) -> bool {
@@ -20,13 +20,34 @@ fn valid(digits: Vec<i32>) -> bool {
 }
 
 fn adjacent_check(digits: &Vec<i32>) -> bool {
-    for i in 0..5 {
-        if digits[i] == digits[i+1] {
-            return true
+    let mut i = 0;
+    let mut num = digits[i];
+    let mut length = 1;
+    let mut return_val = false;
+
+    while i < 5 {
+        if num == digits[i+1] {
+            length += 1;
+
+            if length == 2 {
+                return_val = true;
+            } else {
+                return_val = false;
+            }
+
+            i += 1;
+        } else {
+            i += 1;
+            num = digits[i];
+            length = 1;
+
+            if return_val {
+                return true
+            }
         }
     }
 
-    false
+    return_val
 }
 
 fn non_decrease_check(digits: &Vec<i32>) -> bool {
