@@ -70,8 +70,8 @@ fn main() {
 
         println!("{}", total);
     } else if part == "2" {
-        let path_to_you = find_path(&mut orbiters, "COM", "YOU").unwrap();
-        let path_to_san = find_path(&mut orbiters, "COM", "SAN").unwrap();
+        let path_to_you = find_path(&orbiters, "COM", "YOU").unwrap();
+        let path_to_san = find_path(&orbiters, "COM", "SAN").unwrap();
 
         println!("{:#?}", path_to_you);
         println!("{:#?}", path_to_san);
@@ -83,7 +83,7 @@ fn parse_orbit(string: &str) -> Vec<&str> {
 }
 
 fn find_path<'a>(
-    orbiters: &mut HashMap<&'a str, Vec<&'a str>>,
+    orbiters: &HashMap<&'a str, Vec<&'a str>>,
     start: &'a str,
     end: &'a str
 ) -> Result<Vec<&'a str>, ()> {
@@ -91,18 +91,14 @@ fn find_path<'a>(
         let end_vec = vec![end];
         Ok(end_vec)
     } else {
-        let empty = vec![];
-        let body_orbiters = match orbiters.get(start) {
-            Some(something) => something.clone(),
-            None            => empty,
-        };
-
-        for body_orbiter in body_orbiters {
-            if let Ok(mut list) = find_path(orbiters, body_orbiter, end) {
-                list.push(start);
-                return Ok(list);
+        if let Some(body_orbiters) = orbiters.get(start) {
+            for body_orbiter in body_orbiters {
+                if let Ok(mut list) = find_path(orbiters, body_orbiter, end) {
+                    list.push(start);
+                    return Ok(list);
+                }
             }
-        }
+        };
 
         Err(())
     }
