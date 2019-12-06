@@ -33,17 +33,13 @@ fn main() {
     if part == "1" {
         // println!("{:#?}", orbiters);
 
-        // let mut queue = VecDeque::<(&str, usize)>::new();
         let mut queue = VecDeque::<&str>::new();
         queue.push_back("COM");
-        // queue.push_back("857");
 
         let mut orbits = HashMap::<&str, usize>::new();
         orbits.insert("COM", 0);
 
-        // let mut orbits: usize = 0;
-
-        while queue.len() != 0 {
+        while !queue.is_empty() {
             let body = queue.pop_front().unwrap();
 
             let empty = vec![];
@@ -53,7 +49,6 @@ fn main() {
             };
 
             // println!("{:#?}", body_orbiters);
-            // orbits += body_orbiters.len() * count;
 
             let count = match orbits.get(body) {
                 Some(i) => *i,
@@ -87,10 +82,14 @@ fn parse_orbit(string: &str) -> Vec<&str> {
     string.split(')').collect()
 }
 
-fn find_path<'a>(orbiters: &mut HashMap<&'a str, Vec<&'a str>>, start: &'a str, end: &'a str) -> Result<Vec<&'a str>, ()> {
+fn find_path<'a>(
+    orbiters: &mut HashMap<&'a str, Vec<&'a str>>,
+    start: &'a str,
+    end: &'a str
+) -> Result<Vec<&'a str>, ()> {
     if start == end {
         let end_vec = vec![end];
-        return Ok(end_vec);
+        Ok(end_vec)
     } else {
         let empty = vec![];
         let body_orbiters = match orbiters.get(start) {
@@ -98,19 +97,13 @@ fn find_path<'a>(orbiters: &mut HashMap<&'a str, Vec<&'a str>>, start: &'a str, 
             None            => empty,
         };
 
-        if body_orbiters.len() == 0 {
-        }
-
         for body_orbiter in body_orbiters {
-            match find_path(orbiters, body_orbiter, end) {
-                Ok(mut list) => {
-                    list.push(start);
-                    return Ok(list);
-                },
-                Err(_) => {},
+            if let Ok(mut list) = find_path(orbiters, body_orbiter, end) {
+                list.push(start);
+                return Ok(list);
             }
         }
 
-        return Err(())
+        Err(())
     }
 }
