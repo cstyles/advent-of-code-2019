@@ -7,7 +7,7 @@ fn main() {
     let orbits: Vec<&str> = input.lines().collect();
 
     let mut bodies: HashSet<&str> = HashSet::new();
-    let mut orbiters = HashMap::<&str, Vec<&str>>::new();
+    let mut orbiters: HashMap<&str, Vec<&str>> = HashMap::new();
 
     for string in &orbits {
         let parsed = parse_orbit(string);
@@ -17,16 +17,9 @@ fn main() {
         bodies.insert(orbited);
         bodies.insert(orbiter);
 
-        let empty = vec![];
-        let mut orbiteds_orbiters = match orbiters.get(orbited) {
-            Some(something) => something.clone(),
-            None            => empty,
-        };
-
+        let orbiteds_orbiters = orbiters.entry(orbited).or_default();
         orbiteds_orbiters.push(orbiter);
-        orbiters.insert(orbited, orbiteds_orbiters);
     }
-
 
     let part = args().nth(1).expect("Please specify a part to run");
 
@@ -42,11 +35,7 @@ fn main() {
         while !queue.is_empty() {
             let body = queue.pop_front().unwrap();
 
-            let empty = vec![];
-            let body_orbiters = match orbiters.get(body) {
-                Some(something) => something.clone(),
-                None            => empty,
-            };
+            let body_orbiters = orbiters.entry(body).or_default();
 
             // println!("{:#?}", body_orbiters);
 
