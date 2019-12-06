@@ -2911,6 +2911,14 @@ fn main() {
         orbiters.insert(orbited, orbiteds_orbiters);
     }
 
+    println!("{:#?}", find_path(&mut orbiters, "COM", "YOU"));
+    println!("{:#?}", find_path(&mut orbiters, "COM", "SAN"));
+
+    return;
+
+
+    // ==== PART 01 ====
+
 
     // println!("{:#?}", orbiters);
 
@@ -2959,4 +2967,32 @@ fn main() {
 
 fn parse_orbit(string: &str) -> Vec<&str> {
     string.split(')').collect()
+}
+
+fn find_path<'a>(orbiters: &mut HashMap<&'a str, Vec<&'a str>>, start: &'a str, end: &'a str) -> Result<Vec<&'a str>, ()> {
+    if start == end {
+        let mut end_vec = vec![end];
+        return Ok(end_vec);
+    } else {
+        let empty = vec![];
+        let body_orbiters = match orbiters.get(start) {
+            Some(something) => something.clone(),
+            None            => empty,
+        };
+
+        if body_orbiters.len() == 0 {
+        }
+
+        for body_orbiter in body_orbiters {
+            match find_path(orbiters, body_orbiter, end) {
+                Ok(mut list) => {
+                    list.push(start);
+                    return Ok(list);
+                },
+                Err(_) => {},
+            }
+        }
+
+        return Err(())
+    }
 }
