@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
+use std::env::args;
 
 fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
@@ -26,58 +27,60 @@ fn main() {
         orbiters.insert(orbited, orbiteds_orbiters);
     }
 
-    println!("{:#?}", find_path(&mut orbiters, "COM", "YOU"));
-    println!("{:#?}", find_path(&mut orbiters, "COM", "SAN"));
 
-    return;
+    let part = args().nth(1).expect("Please specify a part to run");
 
+    if part == "1" {
+        // println!("{:#?}", orbiters);
 
-    // ==== PART 01 ====
+        // let mut queue = VecDeque::<(&str, usize)>::new();
+        let mut queue = VecDeque::<&str>::new();
+        queue.push_back("COM");
+        // queue.push_back("857");
 
+        let mut orbits = HashMap::<&str, usize>::new();
+        orbits.insert("COM", 0);
 
-    // println!("{:#?}", orbiters);
+        // let mut orbits: usize = 0;
 
-    // let mut queue = VecDeque::<(&str, usize)>::new();
-    let mut queue = VecDeque::<&str>::new();
-    queue.push_back("COM");
-    // queue.push_back("857");
+        while queue.len() != 0 {
+            let body = queue.pop_front().unwrap();
 
-    let mut orbits = HashMap::<&str, usize>::new();
-    orbits.insert("COM", 0);
+            let empty = vec![];
+            let body_orbiters = match orbiters.get(body) {
+                Some(something) => something.clone(),
+                None            => empty,
+            };
 
-    // let mut orbits: usize = 0;
+            // println!("{:#?}", body_orbiters);
+            // orbits += body_orbiters.len() * count;
 
-    while queue.len() != 0 {
-        let body = queue.pop_front().unwrap();
+            let count = match orbits.get(body) {
+                Some(i) => *i,
+                None    => 0,
+            };
 
-        let empty = vec![];
-        let body_orbiters = match orbiters.get(body) {
-            Some(something) => something.clone(),
-            None            => empty,
-        };
-
-        // println!("{:#?}", body_orbiters);
-        // orbits += body_orbiters.len() * count;
-
-        let count = match orbits.get(body) {
-            Some(i) => *i,
-            None    => 0,
-        };
-
-        for body_orbiter in body_orbiters {
-            queue.push_back(body_orbiter);
-            orbits.insert(body_orbiter, count + 1);
+            for body_orbiter in body_orbiters {
+                queue.push_back(body_orbiter);
+                orbits.insert(body_orbiter, count + 1);
+            }
         }
+
+        // println!("{:#?}", orbits);
+
+        let mut total = 0;
+        for body in bodies {
+            total += orbits.get(body).unwrap_or(&0);
+        }
+
+        println!("{}", total);
+    } else if part == "2" {
+        let path_to_you = find_path(&mut orbiters, "COM", "YOU").unwrap();
+        let path_to_san = find_path(&mut orbiters, "COM", "SAN").unwrap();
+
+        println!("{:#?}", path_to_you);
+        println!("{:#?}", path_to_san);
     }
-
-    println!("{:#?}", orbits);
-
-    let mut total = 0;
-    for body in bodies {
-        total += orbits.get(body).unwrap_or(&0);
-    }
-
-    println!("{}", total);
 }
 
 fn parse_orbit(string: &str) -> Vec<&str> {
@@ -86,7 +89,7 @@ fn parse_orbit(string: &str) -> Vec<&str> {
 
 fn find_path<'a>(orbiters: &mut HashMap<&'a str, Vec<&'a str>>, start: &'a str, end: &'a str) -> Result<Vec<&'a str>, ()> {
     if start == end {
-        let mut end_vec = vec![end];
+        let end_vec = vec![end];
         return Ok(end_vec);
     } else {
         let empty = vec![];
