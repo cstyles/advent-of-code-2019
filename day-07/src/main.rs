@@ -32,17 +32,14 @@ enum Command {
 }
 
 impl Command {
-    fn from(number: i32) -> Command {
+    fn from(number: i32) -> Result<Command, ()> {
         match number {
-            1 => Command::Add,
-            2 => Command::Multiply,
-            99 => Command::Halt,
-            _ => {
-                eprintln!();
-                eprintln!("ERROR:");
-                eprintln!("Unrecognized command: {}", number);
-                panic!();
-            },
+            1 => Ok(Command::Add),
+            2 => Ok(Command::Multiply),
+            3 => Ok(Command::Input),
+            4 => Ok(Command::Output),
+            99 => Ok(Command::Halt),
+            _ => Err(()),
         }
     }
 }
@@ -88,7 +85,15 @@ impl Processor {
         let instruction = self.code[self.pc];
         let mut param_modes = vec![];
 
-        let command = Command::from(instruction % 100);
+        let opcode = instruction % 100;
+        let command = Command::from(opcode).unwrap_or_else(|_err| {
+            eprintln!();
+            eprintln!("ERROR:");
+            eprintln!("Unrecognized command: {}", opcode);
+            eprintln!("pc: {}", self.pc);
+            panic!();
+        });
+
         param_modes.push(ParamMode::from(instruction / 100 % 10));
         param_modes.push(ParamMode::from(instruction / 1000 % 10));
 
