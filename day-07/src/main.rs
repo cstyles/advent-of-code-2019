@@ -225,7 +225,7 @@ fn main() {
     let code = read_code(&file_name);
 
     let mut max = 0;
-    for phase_settings in permutate(vec![0, 1, 2, 3, 4]) {
+    for phase_settings in permutate(vec![5, 6, 7, 8, 9]) {
         let mut amplifier_a = Processor::new(code.clone());
         let mut amplifier_b = Processor::new(code.clone());
         let mut amplifier_c = Processor::new(code.clone());
@@ -240,19 +240,27 @@ fn main() {
 
         amplifier_a.inputs.push_back(0);
 
-        amplifier_a.run_program();
+        loop {
+            amplifier_a.run_program();
 
-        amplifier_b.inputs.push_back(amplifier_a.output.unwrap());
-        amplifier_b.run_program();
+            amplifier_b.inputs.push_back(amplifier_a.output.unwrap());
+            amplifier_b.run_program();
 
-        amplifier_c.inputs.push_back(amplifier_b.output.unwrap());
-        amplifier_c.run_program();
+            amplifier_c.inputs.push_back(amplifier_b.output.unwrap());
+            amplifier_c.run_program();
 
-        amplifier_d.inputs.push_back(amplifier_c.output.unwrap());
-        amplifier_d.run_program();
+            amplifier_d.inputs.push_back(amplifier_c.output.unwrap());
+            amplifier_d.run_program();
 
-        amplifier_e.inputs.push_back(amplifier_d.output.unwrap());
-        amplifier_e.run_program();
+            amplifier_e.inputs.push_back(amplifier_d.output.unwrap());
+            amplifier_e.run_program();
+
+            amplifier_a.inputs.push_back(amplifier_e.output.unwrap());
+
+            if amplifier_e.state == State::Halted {
+                break
+            }
+        }
 
         let final_result = amplifier_e.output.unwrap();
         if final_result > max {
