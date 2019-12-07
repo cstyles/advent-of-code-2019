@@ -1,6 +1,4 @@
-// use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
-// use std::env::args;
 use std::io::{self, Read, Write};
 
 #[derive(PartialEq)]
@@ -28,6 +26,8 @@ impl ParamMode {
 enum Command {
     Add,
     Multiply,
+    Input,
+    Output,
     Halt,
 }
 
@@ -130,6 +130,22 @@ impl Processor {
 
                 self.pc += 4;
             },
+            Command::Input => {
+                let address = self.code[self.pc + 1] as usize;
+                let num = prompt_for_input();
+
+                self.code[address] = num;
+
+                self.pc += 2;
+            },
+            Command::Output => {
+                let address = self.code[self.pc + 1] as usize;
+                let r0 = self.code[address];
+
+                println!("{}", r0);
+
+                self.pc += 2;
+            },
             Command::Halt => {
                 self.state = State::Halted;
 
@@ -141,21 +157,10 @@ impl Processor {
 
 fn main() {
     // let code = read_code("input.txt");
+    let mut code = read_code("../aoc-05/input.txt");
 
-    for i in 0..100 {
-        for j in 0..100 {
-            let mut code = read_code("../aoc-02/input.txt");
-            code[1] = i;
-            code[2] = j;
-
-            let mut processor = Processor::new(code);
-            processor.run_program();
-
-            if processor.code[0] == 19690720 {
-                println!("{}, {}", i, j);
-            }
-        }
-    }
+    let mut processor = Processor::new(code);
+    processor.run_program();
 }
 
 fn _old_main() {
