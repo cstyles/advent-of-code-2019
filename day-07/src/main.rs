@@ -30,7 +30,7 @@ enum Command {
     Output,
     JumpIfTrue,
     JumpIfFalse,
-    // LessThan,
+    LessThan,
     // Equals,
     Halt,
 }
@@ -44,7 +44,7 @@ impl Command {
             4 => Ok(Command::Output),
             5 => Ok(Command::JumpIfTrue),
             6 => Ok(Command::JumpIfFalse),
-            // 7 => Ok(Command::LessThan),
+            7 => Ok(Command::LessThan),
             // 8 => Ok(Command::Equals),
             99 => Ok(Command::Halt),
             _ => Err(()),
@@ -173,6 +173,19 @@ impl Processor {
                 } else {
                     self.pc += 3;
                 }
+            },
+            Command::LessThan => {
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.code[self.pc + 3] as usize;
+
+                if r0 < r1 {
+                    self.code[address] = 1;
+                } else {
+                    self.code[address] = 0;
+                }
+
+                self.pc += 4;
             },
             Command::Halt => {
                 self.state = State::Halted;
