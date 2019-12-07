@@ -480,3 +480,18 @@ fn read_code(filename: &str) -> Vec<i32> {
         .map(|num| num.parse().unwrap())
         .collect()
 }
+
+fn prompt_for_input() -> i32 {
+    print!(">>> ");
+    io::stdout().flush().unwrap();
+
+    read_from_stdin()
+}
+
+fn read_from_stdin() -> i32 {
+    let mut buffer = String::new();
+    io::stdin().read_line(&mut buffer).unwrap();
+    let trimmed = buffer.trim();
+
+    trimmed.parse().expect("Couldn't parse input as i32")
+}
