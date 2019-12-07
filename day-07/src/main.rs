@@ -3,7 +3,151 @@ use std::fs;
 // use std::env::args;
 use std::io::{self, Read, Write};
 
+#[derive(PartialEq)]
+enum State {
+    Running,
+    Halted,
+}
+
+#[derive(Copy, Clone)]
+enum ParamMode {
+    Position,
+    Immediate,
+}
+
+impl ParamMode {
+    fn from(number: i32) -> ParamMode {
+        match number {
+            0 => ParamMode::Position,
+            1 => ParamMode::Immediate,
+            _ => ParamMode::Position,
+        }
+    }
+}
+
+enum Command {
+    Add,
+    Multiply,
+    Halt,
+}
+
+impl Command {
+    fn from(number: i32) -> Command {
+        match number {
+            1 => Command::Add,
+            2 => Command::Multiply,
+            99 => Command::Halt,
+            _ => {
+                eprintln!();
+                eprintln!("ERROR:");
+                eprintln!("Unrecognized command: {}", number);
+                panic!();
+            },
+        }
+    }
+}
+
+struct Instruction {
+    command: Command,
+    param_modes: Vec<ParamMode>,
+}
+
+impl Instruction {
+    fn new(command: Command, param_modes: Vec<ParamMode>) -> Self {
+        Self {
+            command,
+            param_modes,
+        }
+    }
+}
+
+struct Processor {
+    pc: usize,
+    code: Vec<i32>,
+    state: State,
+}
+
+impl Processor {
+    fn new(code: Vec<i32>) -> Self {
+        Self {
+            pc: 0,
+            code,
+            state: State::Halted,
+        }
+    }
+
+    fn run_program(&mut self) {
+        self.state = State::Running;
+
+        while self.state == State::Running {
+            self.execute_instruction(self.fetch_instruction());
+        }
+    }
+
+    fn fetch_instruction(&self) -> Instruction {
+        let instruction = self.code[self.pc];
+        let mut param_modes = vec![];
+
+        let command = Command::from(instruction % 100);
+        param_modes.push(ParamMode::from(instruction / 100 % 10));
+        param_modes.push(ParamMode::from(instruction / 1000 % 10));
+
+        Instruction::new(command, param_modes)
+    }
+
+    fn get_param(&self, offset: usize, param_mode: ParamMode) -> i32 {
+        match param_mode {
+            ParamMode::Position => {
+                let address = self.code[self.pc + offset + 1] as usize;
+                self.code[address]
+            },
+            ParamMode::Immediate => self.code[self.pc + offset + 1],
+        }
+    }
+
+    fn execute_instruction(&mut self, instruction: Instruction) {
+        match instruction.command {
+            Command::Add => {
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+
+                let address = self.code[self.pc + 3] as usize;
+                self.code[address] = r0 + r1;
+
+                self.pc += 4;
+            },
+            Command::Multiply => {
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+
+                let address = self.code[self.pc + 3] as usize;
+                self.code[address] = r0 * r1;
+
+                self.pc += 4;
+            },
+            Command::Halt => {
+                self.state = State::Halted;
+
+                self.pc += 1;
+            },
+        };
+    }
+}
+
 fn main() {
+    // let code = read_code("input.txt");
+    let mut code = read_code("../aoc-02/input.txt");
+
+    // Add the modifications required by the instructions
+    code[1] = 12;
+    code[2] = 2;
+
+    let mut processor = Processor::new(code);
+    processor.run_program();
+    println!("{}", processor.code[0]);
+}
+
+fn _old_main() {
     let permutations = permutate(vec![5, 6, 7, 8, 9]);
 
     let mut max = 0;
@@ -89,8 +233,7 @@ fn main() {
     println!("MAX: {}", max);
 }
 
-// fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32) -> (usize, i32) {
-// fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32, pc: usize) -> (usize, i32) {
+#[allow(dead_code)]
 fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32, pc: usize, ipp: i32) -> (usize, i32, i32) {
     let mut pc = pc;
     let mut inputs_processed = ipp;
@@ -295,6 +438,7 @@ fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32, pc: u
     (pc, output, inputs_processed)
 }
 
+#[allow(dead_code)]
 fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     if numbers.len() < 2 {
         return vec![numbers]
