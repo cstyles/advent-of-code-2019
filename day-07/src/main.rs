@@ -11,11 +11,11 @@ fn main() {
 
     let mut max = 0;
     for permutation in permutations {
-        let a = permutation[0];
-        let b = permutation[1];
-        let c = permutation[2];
-        let d = permutation[3];
-        let e = permutation[4];
+        let phase_setting_a = permutation[0];
+        let phase_setting_b = permutation[1];
+        let phase_setting_c = permutation[2];
+        let phase_setting_d = permutation[3];
+        let phase_setting_e = permutation[4];
         // code = vec![
         //     3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0
         // ];
@@ -53,7 +53,15 @@ fn main() {
         let mut code_d = code.clone();
         let mut code_e = code.clone();
 
-        println!("{} {} {} {} {}", a, b, c, d, e);
+        println!(
+            "{} {} {} {} {}",
+            phase_setting_a,
+            phase_setting_b,
+            phase_setting_c,
+            phase_setting_d,
+            phase_setting_e
+        );
+
         let mut pc_a = 0;
         let mut pc_b = 0;
         let mut pc_c = 0;
@@ -68,27 +76,27 @@ fn main() {
         let mut final_result = 0;
         loop {
             println!("running amplifier A: (pc: {}, is: {}, ipp: {})", pc_a, final_result, ipp_a);
-            let (ugh_pc_a, ugh_result, ugh_ipp_a) = run_program(&mut code_a, a, final_result, pc_a, ipp_a);
+            let (ugh_pc_a, ugh_result, ugh_ipp_a) = run_program(&mut code_a, phase_setting_a, final_result, pc_a, ipp_a);
             pc_a = ugh_pc_a;
             ipp_a = ugh_ipp_a;
 
             println!("running amplifier B: (pc: {}, is: {}, ipp: {})", pc_b, ugh_result, ipp_b);
-            let (ugh_pc_b, result, ugh_ipp_b) = run_program(&mut code_b, b, ugh_result, pc_b, ipp_b);
+            let (ugh_pc_b, result, ugh_ipp_b) = run_program(&mut code_b, phase_setting_b, ugh_result, pc_b, ipp_b);
             pc_b = ugh_pc_b;
             ipp_b = ugh_ipp_b;
 
             println!("running amplifier C: (pc: {}, is: {}, ipp: {})", pc_c, ugh_result, ipp_c);
-            let (ugh_pc_c, result, ugh_ipp_c) = run_program(&mut code_c, c, result, pc_c, ipp_c);
+            let (ugh_pc_c, result, ugh_ipp_c) = run_program(&mut code_c, phase_setting_c, result, pc_c, ipp_c);
             pc_c = ugh_pc_c;
             ipp_c = ugh_ipp_c;
 
             println!("running amplifier D: (pc: {}, is: {}, ipp: {})", pc_d, ugh_result, ipp_d);
-            let (ugh_pc_d, result, ugh_ipp_d) = run_program(&mut code_d, d, result, pc_d, ipp_d);
+            let (ugh_pc_d, result, ugh_ipp_d) = run_program(&mut code_d, phase_setting_d, result, pc_d, ipp_d);
             pc_d = ugh_pc_d;
             ipp_d = ugh_ipp_d;
 
             println!("running amplifier E: (pc: {}, is: {}, ipp: {})", pc_e, ugh_result, ipp_e);
-            let (ugh_pc_e, result, ugh_ipp_e) = run_program(&mut code_e, e, result, pc_e, ipp_e);
+            let (ugh_pc_e, result, ugh_ipp_e) = run_program(&mut code_e, phase_setting_e, result, pc_e, ipp_e);
             pc_e = ugh_pc_e;
             ipp_e = ugh_ipp_e;
 
