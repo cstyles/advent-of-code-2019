@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
 
@@ -210,8 +211,8 @@ impl Processor {
 }
 
 fn main() {
-    // let code = read_code("input.txt");
-    let code = read_code("../aoc-05/input.txt");
+    let file_name = env::args().nth(1).expect("Please provide input file");
+    let code = read_code(&file_name);
 
     let mut processor = Processor::new(code);
     processor.run_program();
