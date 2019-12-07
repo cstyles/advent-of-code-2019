@@ -1,11 +1,13 @@
+use std::collections::{VecDeque};
 use std::env;
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 #[derive(PartialEq)]
 enum State {
     Running,
     Halted,
+    Yielded,
 }
 
 #[derive(Copy, Clone)]
@@ -71,6 +73,8 @@ struct Processor {
     pc: usize,
     code: Vec<i32>,
     state: State,
+    inputs: VecDeque<i32>,
+    output: Option<i32>,
 }
 
 impl Processor {
@@ -79,6 +83,8 @@ impl Processor {
             pc: 0,
             code,
             state: State::Halted,
+            inputs: VecDeque::new(),
+            output: None,
         }
     }
 
@@ -141,7 +147,9 @@ impl Processor {
             },
             Command::Input => {
                 let address = self.code[self.pc + 1] as usize;
-                let num = prompt_for_input();
+
+                // let num = prompt_for_input();
+                let num = self.inputs.pop_front().expect("`inputs` is empty");
 
                 self.code[address] = num;
 
@@ -151,9 +159,11 @@ impl Processor {
                 let address = self.code[self.pc + 1] as usize;
                 let r0 = self.code[address];
 
-                println!("{}", r0);
+                // println!("{}", r0);
+                self.output = Some(r0);
 
                 self.pc += 2;
+                self.state = State::Yielded;
             },
             Command::JumpIfTrue => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
@@ -214,8 +224,43 @@ fn main() {
     let file_name = env::args().nth(1).expect("Please provide input file");
     let code = read_code(&file_name);
 
-    let mut processor = Processor::new(code);
-    processor.run_program();
+    let mut max = 0;
+    for phase_settings in permutate(vec![0, 1, 2, 3, 4]) {
+        let mut amplifier_a = Processor::new(code.clone());
+        let mut amplifier_b = Processor::new(code.clone());
+        let mut amplifier_c = Processor::new(code.clone());
+        let mut amplifier_d = Processor::new(code.clone());
+        let mut amplifier_e = Processor::new(code.clone());
+
+        amplifier_a.inputs.push_back(phase_settings[0]);
+        amplifier_b.inputs.push_back(phase_settings[1]);
+        amplifier_c.inputs.push_back(phase_settings[2]);
+        amplifier_d.inputs.push_back(phase_settings[3]);
+        amplifier_e.inputs.push_back(phase_settings[4]);
+
+        amplifier_a.inputs.push_back(0);
+
+        amplifier_a.run_program();
+
+        amplifier_b.inputs.push_back(amplifier_a.output.unwrap());
+        amplifier_b.run_program();
+
+        amplifier_c.inputs.push_back(amplifier_b.output.unwrap());
+        amplifier_c.run_program();
+
+        amplifier_d.inputs.push_back(amplifier_c.output.unwrap());
+        amplifier_d.run_program();
+
+        amplifier_e.inputs.push_back(amplifier_d.output.unwrap());
+        amplifier_e.run_program();
+
+        let final_result = amplifier_e.output.unwrap();
+        if final_result > max {
+            max = final_result;
+        }
+    }
+
+    println!("max: {}", max);
 }
 
 fn _old_main() {
@@ -509,7 +554,6 @@ fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32, pc: u
     (pc, output, inputs_processed)
 }
 
-#[allow(dead_code)]
 fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     if numbers.len() < 2 {
         return vec![numbers]
@@ -541,6 +585,7 @@ fn read_code(filename: &str) -> Vec<i32> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn prompt_for_input() -> i32 {
     print!(">>> ");
     io::stdout().flush().unwrap();
@@ -548,6 +593,7 @@ fn prompt_for_input() -> i32 {
     read_from_stdin()
 }
 
+#[allow(dead_code)]
 fn read_from_stdin() -> i32 {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer).unwrap();
