@@ -29,7 +29,7 @@ enum Command {
     Input,
     Output,
     JumpIfTrue,
-    // JumpIfFalse,
+    JumpIfFalse,
     // LessThan,
     // Equals,
     Halt,
@@ -43,7 +43,7 @@ impl Command {
             3 => Ok(Command::Input),
             4 => Ok(Command::Output),
             5 => Ok(Command::JumpIfTrue),
-            // 6 => Ok(Command::JumpIfFalse),
+            6 => Ok(Command::JumpIfFalse),
             // 7 => Ok(Command::LessThan),
             // 8 => Ok(Command::Equals),
             99 => Ok(Command::Halt),
@@ -158,6 +158,16 @@ impl Processor {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
 
                 if r0 != 0 {
+                    let r1 = self.get_param(1, instruction.param_modes[1]);
+                    self.pc = r1 as usize;
+                } else {
+                    self.pc += 3;
+                }
+            },
+            Command::JumpIfFalse => {
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+
+                if r0 == 0 {
                     let r1 = self.get_param(1, instruction.param_modes[1]);
                     self.pc = r1 as usize;
                 } else {
