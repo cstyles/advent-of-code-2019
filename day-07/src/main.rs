@@ -136,15 +136,21 @@ impl Processor {
 
 fn main() {
     // let code = read_code("input.txt");
-    let mut code = read_code("../aoc-02/input.txt");
 
-    // Add the modifications required by the instructions
-    code[1] = 12;
-    code[2] = 2;
+    for i in 0..100 {
+        for j in 0..100 {
+            let mut code = read_code("../aoc-02/input.txt");
+            code[1] = i;
+            code[2] = j;
 
-    let mut processor = Processor::new(code);
-    processor.run_program();
-    println!("{}", processor.code[0]);
+            let mut processor = Processor::new(code);
+            processor.run_program();
+
+            if processor.code[0] == 19690720 {
+                println!("{}, {}", i, j);
+            }
+        }
+    }
 }
 
 fn _old_main() {
