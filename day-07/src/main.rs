@@ -31,7 +31,7 @@ enum Command {
     JumpIfTrue,
     JumpIfFalse,
     LessThan,
-    // Equals,
+    Equals,
     Halt,
 }
 
@@ -45,7 +45,7 @@ impl Command {
             5 => Ok(Command::JumpIfTrue),
             6 => Ok(Command::JumpIfFalse),
             7 => Ok(Command::LessThan),
-            // 8 => Ok(Command::Equals),
+            8 => Ok(Command::Equals),
             99 => Ok(Command::Halt),
             _ => Err(()),
         }
@@ -187,6 +187,19 @@ impl Processor {
 
                 self.pc += 4;
             },
+            Command::Equals => {
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.code[self.pc + 3] as usize;
+
+                if r0 == r1 {
+                    self.code[address] = 1;
+                } else {
+                    self.code[address] = 0;
+                }
+
+                self.pc += 4;
+            },
             Command::Halt => {
                 self.state = State::Halted;
 
@@ -198,7 +211,7 @@ impl Processor {
 
 fn main() {
     // let code = read_code("input.txt");
-    let mut code = read_code("../aoc-05/input.txt");
+    let code = read_code("../aoc-05/input.txt");
 
     let mut processor = Processor::new(code);
     processor.run_program();
