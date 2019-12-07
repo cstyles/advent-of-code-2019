@@ -48,6 +48,7 @@ fn main() {
 fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32) -> (usize, i32) {
     let mut pc = 0;
     let mut inputs_processed = 0;
+    let mut output = 0;
 
     while code[pc] != 99 {
         let mut instruction = code[pc];
@@ -133,12 +134,13 @@ fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32) -> (u
                 let r0 = code[addr0];
 
                 println!("4 => {}", r0);
+                output = r0;
 
                 pc += 2;
 
                 // Exit early with output
                 // return (pc, code[0])
-                return (pc, code[addr0])
+                // return (pc, code[addr0])
             },
             5 => {
                 let addr0: usize = code[pc+1] as usize;
@@ -235,5 +237,6 @@ fn run_program(code: &mut Vec<i32>, phase_setting: i32, input_signal: i32) -> (u
         };
     }
 
-    (pc, code[0])
+    // (pc, code[0])
+    (pc, output)
 }
