@@ -1,4 +1,4 @@
-use std::collections::{VecDeque};
+use std::collections::VecDeque;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -121,7 +121,7 @@ impl Processor {
             ParamMode::Position => {
                 let address = self.code[self.pc + offset + 1] as usize;
                 self.code[address]
-            },
+            }
             ParamMode::Immediate => self.code[self.pc + offset + 1],
         }
     }
@@ -136,7 +136,7 @@ impl Processor {
                 self.code[address] = r0 + r1;
 
                 self.pc += 4;
-            },
+            }
             Command::Multiply => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
                 let r1 = self.get_param(1, instruction.param_modes[1]);
@@ -145,7 +145,7 @@ impl Processor {
                 self.code[address] = r0 * r1;
 
                 self.pc += 4;
-            },
+            }
             Command::Input => {
                 let address = self.code[self.pc + 1] as usize;
 
@@ -155,7 +155,7 @@ impl Processor {
                 self.code[address] = num;
 
                 self.pc += 2;
-            },
+            }
             Command::Output => {
                 let address = self.code[self.pc + 1] as usize;
                 let r0 = self.code[address];
@@ -165,7 +165,7 @@ impl Processor {
 
                 self.pc += 2;
                 self.state = State::Yielded;
-            },
+            }
             Command::JumpIfTrue => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
 
@@ -175,7 +175,7 @@ impl Processor {
                 } else {
                     self.pc += 3;
                 }
-            },
+            }
             Command::JumpIfFalse => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
 
@@ -185,7 +185,7 @@ impl Processor {
                 } else {
                     self.pc += 3;
                 }
-            },
+            }
             Command::LessThan => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
                 let r1 = self.get_param(1, instruction.param_modes[1]);
@@ -198,7 +198,7 @@ impl Processor {
                 }
 
                 self.pc += 4;
-            },
+            }
             Command::Equals => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
                 let r1 = self.get_param(1, instruction.param_modes[1]);
@@ -211,12 +211,12 @@ impl Processor {
                 }
 
                 self.pc += 4;
-            },
+            }
             Command::Halt => {
                 self.state = State::Halted;
 
                 self.pc += 1;
-            },
+            }
         };
     }
 }
@@ -259,7 +259,7 @@ fn main() {
             amplifier_a.inputs.push_back(amplifier_e.output.unwrap());
 
             if amplifier_e.state == State::Halted {
-                break
+                break;
             }
         }
 
@@ -274,13 +274,17 @@ fn main() {
 
 fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     if numbers.len() < 2 {
-        return vec![numbers]
+        return vec![numbers];
     }
 
     let mut results = vec![];
     for number in &numbers {
         // Vector containing all numbers except the number we've "fixed"
-        let rest = numbers.clone().into_iter().filter(|elem| elem != number).collect();
+        let rest = numbers
+            .clone()
+            .into_iter()
+            .filter(|elem| elem != number)
+            .collect();
 
         // Recursively generate permutations for the non-fixed numbers
         let permutations = permutate(rest);
@@ -295,8 +299,12 @@ fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     results
 }
 
-fn load_code<T: AsRef<Path>>(filename: T) -> Vec<i32> {
-    fs::read_to_string(filename).expect("Error reading input file")
+fn load_code<T>(filename: T) -> Vec<i32>
+where
+    T: AsRef<Path>,
+{
+    fs::read_to_string(filename)
+        .expect("Error reading input file")
         .trim()
         .split(',')
         .map(|num| num.parse().unwrap())
