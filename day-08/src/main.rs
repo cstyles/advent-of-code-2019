@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 
+#[allow(unreachable_code)]
 fn main() {
     let width: i32 = 25;
     let height: i32 = 6;
@@ -9,7 +10,63 @@ fn main() {
     let layers: i32 = numbers.len() as i32 / height / width;
 
     // println!("{:#?}", numbers);
-    println!("{:#?}", layers);
+    // println!("{:#?}", layers);
+
+    let mut image: Vec<u32> = Vec::with_capacity((width * height) as usize);
+    for _ in 0..(width * height) {
+        image.push(2); // Transparent
+    }
+
+    for layer in 0..layers {
+        // layer = (layers - 1) - layer;
+        let start = (layer * width * height) as usize;
+        let end = start + (width * height) as usize;
+
+        println!("start: {}", start);
+        println!("end: {}", end);
+
+        // for j in start..end {
+        //     let image_j = j - start;
+        //     if numbers[j] != 2 { // Transparent
+        //         image[image_j] = numbers[j];
+        //     }
+        // }
+
+        for j in start..end {
+            let image_j = j - start;
+
+            if image_j == 37 {
+                dbg!(image[image_j]);
+                dbg!(numbers[j]);
+            }
+
+            if image[image_j] == 2 { // Transparent
+                if numbers[j] != 2 {
+                    println!("Setting pixel {:03} to {} (layer {})", image_j, numbers[j], layer);
+                    image[image_j] = numbers[j];
+                }
+            }
+        }
+    }
+
+    // println!("final image");
+    for y in 0..height {
+        for x in 0..width {
+            let offset: usize = (y * width + x) as usize;
+            // let offset = offset + 14_850;
+            // let offset = offset + 150;
+            // let offset = offset;
+            print!("{}", image[offset]);
+            // print!("{}", numbers[offset]);
+        }
+        println!();
+    }
+    // io::stdout().flush().unwrap();
+    // println!("{:#?}", image);
+
+    return;
+
+    // == part 1 ==
 
     let mut min_zeroes = 1000000;
     let mut layer_with_min_zeroes = -1;
