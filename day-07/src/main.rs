@@ -18,11 +18,11 @@ enum ParamMode {
 }
 
 impl ParamMode {
-    fn from(number: i32) -> ParamMode {
+    fn from(number: i32) -> Result<ParamMode, ()> {
         match number {
-            0 => ParamMode::Position,
-            1 => ParamMode::Immediate,
-            _ => ParamMode::Position,
+            0 => Ok(ParamMode::Position),
+            1 => Ok(ParamMode::Immediate),
+            _ => Err(()),
         }
     }
 }
@@ -110,8 +110,23 @@ impl Processor {
             panic!();
         });
 
-        param_modes.push(ParamMode::from(instruction / 100 % 10));
-        param_modes.push(ParamMode::from(instruction / 1000 % 10));
+        let param_mode = instruction / 100 % 10;
+        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
+            eprintln!();
+            eprintln!("ERROR:");
+            eprintln!("Unrecognized parameter mode: {}", param_mode);
+            eprintln!("pc: {}", self.pc);
+            panic!();
+        }));
+
+        let param_mode = instruction / 1000 % 10;
+        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
+            eprintln!();
+            eprintln!("ERROR:");
+            eprintln!("Unrecognized parameter mode: {}", param_mode);
+            eprintln!("pc: {}", self.pc);
+            panic!();
+        }));
 
         Instruction::new(command, param_modes)
     }
