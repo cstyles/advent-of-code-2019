@@ -2,6 +2,7 @@ use std::collections::{VecDeque};
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+use std::path::Path;
 
 #[derive(PartialEq)]
 enum State {
@@ -222,7 +223,7 @@ impl Processor {
 
 fn main() {
     let file_name = env::args().nth(1).expect("Please provide input file");
-    let code = read_code(&file_name);
+    let code = load_code(file_name);
 
     let mut max = 0;
     for phase_settings in permutate(vec![5, 6, 7, 8, 9]) {
@@ -294,7 +295,7 @@ fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     results
 }
 
-fn read_code(filename: &str) -> Vec<i32> {
+fn load_code<T: AsRef<Path>>(filename: T) -> Vec<i32> {
     fs::read_to_string(filename).expect("Error reading input file")
         .trim()
         .split(',')
