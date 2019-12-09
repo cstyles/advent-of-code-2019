@@ -152,7 +152,6 @@ impl Processor {
                     self.code[address as usize]
                 }
             }
-
         }
     }
 
@@ -255,7 +254,11 @@ impl Processor {
 }
 
 fn main() {
-    let input = env::args().nth(1).expect("Please provide initial input").parse().unwrap();
+    let input = env::args()
+        .nth(1)
+        .expect("Please provide initial input")
+        .parse()
+        .unwrap();
     let file_name = env::args().nth(2).expect("Please provide input file");
     let code = load_code(file_name);
 
