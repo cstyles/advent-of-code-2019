@@ -18,7 +18,7 @@ enum ParamMode {
 }
 
 impl ParamMode {
-    fn from(number: i32) -> Result<ParamMode, ()> {
+    fn from(number: i64) -> Result<ParamMode, ()> {
         match number {
             0 => Ok(ParamMode::Position),
             1 => Ok(ParamMode::Immediate),
@@ -40,7 +40,7 @@ enum Command {
 }
 
 impl Command {
-    fn from(number: i32) -> Result<Command, ()> {
+    fn from(number: i64) -> Result<Command, ()> {
         match number {
             1 => Ok(Command::Add),
             2 => Ok(Command::Multiply),
@@ -72,14 +72,14 @@ impl Instruction {
 
 struct Processor {
     pc: usize,
-    code: Vec<i32>,
+    code: Vec<i64>,
     state: State,
-    inputs: VecDeque<i32>,
-    output: Option<i32>,
+    inputs: VecDeque<i64>,
+    output: Option<i64>,
 }
 
 impl Processor {
-    fn new(code: Vec<i32>) -> Self {
+    fn new(code: Vec<i64>) -> Self {
         Self {
             pc: 0,
             code,
@@ -131,7 +131,7 @@ impl Processor {
         Instruction::new(command, param_modes)
     }
 
-    fn get_param(&self, offset: usize, param_mode: ParamMode) -> i32 {
+    fn get_param(&self, offset: usize, param_mode: ParamMode) -> i64 {
         match param_mode {
             ParamMode::Position => {
                 let address = self.code[self.pc + offset + 1] as usize;
@@ -287,7 +287,7 @@ fn main() {
     println!("max: {}", max);
 }
 
-fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
+fn permutate(numbers: Vec<i64>) -> Vec<Vec<i64>> {
     if numbers.len() < 2 {
         return vec![numbers];
     }
@@ -314,7 +314,7 @@ fn permutate(numbers: Vec<i32>) -> Vec<Vec<i32>> {
     results
 }
 
-fn load_code<T>(filename: T) -> Vec<i32>
+fn load_code<T>(filename: T) -> Vec<i64>
 where
     T: AsRef<Path>,
 {
@@ -327,7 +327,7 @@ where
 }
 
 #[allow(dead_code)]
-fn prompt_for_input() -> i32 {
+fn prompt_for_input() -> i64 {
     print!(">>> ");
     io::stdout().flush().unwrap();
 
@@ -335,10 +335,10 @@ fn prompt_for_input() -> i32 {
 }
 
 #[allow(dead_code)]
-fn read_from_stdin() -> i32 {
+fn read_from_stdin() -> i64 {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer).unwrap();
     let trimmed = buffer.trim();
 
-    trimmed.parse().expect("Couldn't parse input as i32")
+    trimmed.parse().expect("Couldn't parse input as i64")
 }
