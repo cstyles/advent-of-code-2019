@@ -1,7 +1,7 @@
 
 
 fn main() {
-    let range = 357253..892942+1;
+    let range = 357253..=892942;
 
     let mut valid_passwords: Vec<i32> = vec![];
 
