@@ -5,6 +5,7 @@ use std::io::{self, Write};
 use std::path::Path;
 
 #[derive(PartialEq)]
+#[allow(dead_code)]
 enum State {
     Running,
     Halted,
@@ -75,6 +76,7 @@ impl Instruction {
     }
 }
 
+#[allow(dead_code)]
 struct Processor {
     pc: usize,
     code: Vec<i64>,
