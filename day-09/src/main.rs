@@ -149,7 +149,6 @@ impl Processor {
 
     fn get_param(&self, offset: usize, param_mode: ParamMode, write: bool) -> i64 {
         let immediate = self.code[self.pc + offset + 1];
-        // dbg!(immediate);
 
         match param_mode {
             ParamMode::Position => {
@@ -159,10 +158,7 @@ impl Processor {
                 } else {
                     self.code[address as usize]
                 }
-                // dbg!(self.code[address])
-                // self.code[address]
             }
-            // ParamMode::Immediate => dbg!(immediate),
             ParamMode::Immediate => immediate,
             ParamMode::Relative => {
                 let address = immediate + self.relative_base;
@@ -171,8 +167,6 @@ impl Processor {
                 } else {
                     self.code[address as usize]
                 }
-                // dbg!(address);
-                // dbg!(self.code[address]);
             }
 
         }
@@ -186,7 +180,6 @@ impl Processor {
                 let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
                 self.code[address] = r0 + r1;
-                // println!("Add: code[{}] = {}", address, r0 + r1);
 
                 self.pc += 4;
             }
@@ -196,7 +189,6 @@ impl Processor {
                 let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
                 self.code[address] = r0 * r1;
-                // println!("Multiply: code[{}] = {}", address, r0 * r1);
 
                 self.pc += 4;
             }
@@ -207,7 +199,6 @@ impl Processor {
                 let num = self.inputs.pop_front().expect("`inputs` is empty");
 
                 self.code[address as usize] = num;
-                // println!("Input: code[{}] = {}", address, num);
 
                 self.pc += 2;
             }
@@ -226,9 +217,7 @@ impl Processor {
                 if r0 != 0 {
                     let r1 = self.get_param(1, instruction.param_modes[1], false);
                     self.pc = r1 as usize;
-                    // println!("JumpIfTrue: pc = {}", self.pc);
                 } else {
-                    // println!("JumpIfTrue: no jump");
                     self.pc += 3;
                 }
             }
@@ -238,9 +227,7 @@ impl Processor {
                 if r0 == 0 {
                     let r1 = self.get_param(1, instruction.param_modes[1], false);
                     self.pc = r1 as usize;
-                    // println!("JumpIfFalse: pc = {}", self.pc);
                 } else {
-                    // println!("JumpIfFalse: no jump");
                     self.pc += 3;
                 }
             }
@@ -251,10 +238,8 @@ impl Processor {
 
                 if r0 < r1 {
                     self.code[address] = 1;
-                    // println!("LessThan: code[{}] = {}", address, 1);
                 } else {
                     self.code[address] = 0;
-                    // println!("LessThan: code[{}] = {}", address, 0);
                 }
 
                 self.pc += 4;
@@ -266,17 +251,14 @@ impl Processor {
 
                 if r0 == r1 {
                     self.code[address] = 1;
-                    // println!("Equals: code[{}] = {}", address, 1);
                 } else {
                     self.code[address] = 0;
-                    // println!("Equals: code[{}] = {}", address, 0);
                 }
 
                 self.pc += 4;
             }
             Command::RelativeBaseOffset => {
                 self.relative_base += self.get_param(0, instruction.param_modes[0], false);
-                // println!("relative_base = {}", self.relative_base);
                 self.pc += 2;
             }
             Command::Halt => {
