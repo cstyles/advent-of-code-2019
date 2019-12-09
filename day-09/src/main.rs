@@ -133,62 +133,61 @@ impl Processor {
         Instruction::new(command, param_modes)
     }
 
-    fn get_param(&self, offset: usize, param_mode: ParamMode, write: bool) -> i64 {
+    fn get_param(&self, offset: usize, param_mode: ParamMode) -> i64 {
+        let immediate: i64 = self.code[self.pc + offset + 1];
+
+        match param_mode {
+            ParamMode::Position => self.code[immediate as usize],
+            ParamMode::Immediate => immediate,
+            ParamMode::Relative => {
+                let address = (immediate + self.relative_base) as usize;
+                self.code[address]
+            }
+        }
+    }
+
+    fn get_address(&self, offset: usize, param_mode: ParamMode) -> usize {
         let immediate = self.code[self.pc + offset + 1];
 
         match param_mode {
-            ParamMode::Position => {
-                let address = immediate;
-                if write {
-                    address
-                } else {
-                    self.code[address as usize]
-                }
-            }
-            ParamMode::Immediate => immediate,
-            ParamMode::Relative => {
-                let address = immediate + self.relative_base;
-                if write {
-                    address
-                } else {
-                    self.code[address as usize]
-                }
-            }
+            ParamMode::Position => immediate as usize,
+            ParamMode::Immediate => panic!("Writable params shoud never be in immediate mode"),
+            ParamMode::Relative => (immediate + self.relative_base) as usize,
         }
     }
 
     fn execute_instruction(&mut self, instruction: Instruction) {
         match instruction.command {
             Command::Add => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
-                let r1 = self.get_param(1, instruction.param_modes[1], false);
-                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.get_address(2, instruction.param_modes[2]);
 
                 self.code[address] = r0 + r1;
 
                 self.pc += 4;
             }
             Command::Multiply => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
-                let r1 = self.get_param(1, instruction.param_modes[1], false);
-                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.get_address(2, instruction.param_modes[2]);
 
                 self.code[address] = r0 * r1;
 
                 self.pc += 4;
             }
             Command::Input => {
-                let address = self.get_param(0, instruction.param_modes[0], true) as usize;
+                let address = self.get_address(0, instruction.param_modes[0]);
 
                 // let num = prompt_for_input();
                 let num = self.inputs.pop_front().expect("`inputs` is empty");
 
-                self.code[address as usize] = num;
+                self.code[address] = num;
 
                 self.pc += 2;
             }
             Command::Output => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r0 = self.get_param(0, instruction.param_modes[0]);
 
                 println!("Output: {}", r0);
                 // self.output = Some(r0);
@@ -197,29 +196,29 @@ impl Processor {
                 // self.state = State::Yielded;
             }
             Command::JumpIfTrue => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r0 = self.get_param(0, instruction.param_modes[0]);
 
                 if r0 != 0 {
-                    let r1 = self.get_param(1, instruction.param_modes[1], false);
+                    let r1 = self.get_param(1, instruction.param_modes[1]);
                     self.pc = r1 as usize;
                 } else {
                     self.pc += 3;
                 }
             }
             Command::JumpIfFalse => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r0 = self.get_param(0, instruction.param_modes[0]);
 
                 if r0 == 0 {
-                    let r1 = self.get_param(1, instruction.param_modes[1], false);
+                    let r1 = self.get_param(1, instruction.param_modes[1]);
                     self.pc = r1 as usize;
                 } else {
                     self.pc += 3;
                 }
             }
             Command::LessThan => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
-                let r1 = self.get_param(1, instruction.param_modes[1], false);
-                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.get_address(2, instruction.param_modes[2]);
 
                 if r0 < r1 {
                     self.code[address] = 1;
@@ -230,9 +229,9 @@ impl Processor {
                 self.pc += 4;
             }
             Command::Equals => {
-                let r0 = self.get_param(0, instruction.param_modes[0], false);
-                let r1 = self.get_param(1, instruction.param_modes[1], false);
-                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let address = self.get_address(2, instruction.param_modes[2]);
 
                 if r0 == r1 {
                     self.code[address] = 1;
@@ -243,7 +242,7 @@ impl Processor {
                 self.pc += 4;
             }
             Command::RelativeBaseOffset => {
-                self.relative_base += self.get_param(0, instruction.param_modes[0], false);
+                self.relative_base += self.get_param(0, instruction.param_modes[0]);
                 self.pc += 2;
             }
             Command::Halt => {
