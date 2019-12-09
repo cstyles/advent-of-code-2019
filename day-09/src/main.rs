@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 enum State {
     Running,
@@ -62,6 +62,7 @@ impl Command {
     }
 }
 
+#[derive(Debug)]
 struct Instruction {
     command: Command,
     param_modes: Vec<ParamMode>,
@@ -76,7 +77,7 @@ impl Instruction {
     }
 }
 
-#[allow(dead_code)]
+#[derive(Debug)]
 struct Processor {
     pc: usize,
     code: Vec<i64>,
