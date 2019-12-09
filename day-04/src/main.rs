@@ -1,16 +1,6 @@
 fn main() {
     let range = 357253..=892942;
-
-    let mut valid_passwords = Vec::<i32>::with_capacity(1000);
-
-    for i in range {
-        if valid(digits(i)) {
-            valid_passwords.push(i);
-        }
-    }
-
-    println!("valid_passwords.len(): {}", valid_passwords.len());
-    // println!("valid_passwords: {:?}", valid_passwords);
+    println!("{}", range.filter(|&i| valid(digits(i))).count());
 }
 
 fn valid(digits: [i32; 6]) -> bool {
