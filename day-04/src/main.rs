@@ -3,7 +3,7 @@
 fn main() {
     let range = 357253..=892942;
 
-    let mut valid_passwords: Vec<i32> = vec![];
+    let mut valid_passwords = Vec::<i32>::with_capacity(1000);
 
     for i in range {
         if valid(digits(i)) {
@@ -12,14 +12,14 @@ fn main() {
     }
 
     println!("valid_passwords.len(): {}", valid_passwords.len());
-    println!("valid_passwords: {:?}", valid_passwords);
+    // println!("valid_passwords: {:?}", valid_passwords);
 }
 
-fn valid(digits: Vec<i32>) -> bool {
-    adjacent_check(&digits) && non_decrease_check(&digits)
+fn valid(digits: [i32; 6]) -> bool {
+    non_decrease_check(digits) && adjacent_check(digits)
 }
 
-fn adjacent_check(digits: &Vec<i32>) -> bool {
+fn adjacent_check(digits: [i32; 6]) -> bool {
     let mut i = 0;
     let mut num = digits[i];
     let mut length = 1;
@@ -50,7 +50,7 @@ fn adjacent_check(digits: &Vec<i32>) -> bool {
     return_val
 }
 
-fn non_decrease_check(digits: &Vec<i32>) -> bool {
+fn non_decrease_check(digits: [i32; 6]) -> bool {
     for i in 0..5 {
         if digits[i] > digits[i+1] {
             return false
@@ -60,7 +60,7 @@ fn non_decrease_check(digits: &Vec<i32>) -> bool {
     true
 }
 
-fn digits(num: i32) -> Vec<i32> {
+fn digits(num: i32) -> [i32; 6] {
     let mut ugh = num;
 
     let ones = ugh % 10;
@@ -80,7 +80,7 @@ fn digits(num: i32) -> Vec<i32> {
 
     let hundred_thousands = ugh % 10;
 
-    vec![
+    [
         hundred_thousands,
         ten_thousands,
         thousands,
