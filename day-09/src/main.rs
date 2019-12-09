@@ -117,32 +117,16 @@ impl Processor {
             panic!();
         });
 
-        let param_mode = instruction / 100 % 10;
-        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
-            eprintln!();
-            eprintln!("ERROR:");
-            eprintln!("Unrecognized parameter mode: {}", param_mode);
-            eprintln!("pc: {}", self.pc);
-            panic!();
-        }));
-
-        let param_mode = instruction / 1000 % 10;
-        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
-            eprintln!();
-            eprintln!("ERROR:");
-            eprintln!("Unrecognized parameter mode: {}", param_mode);
-            eprintln!("pc: {}", self.pc);
-            panic!();
-        }));
-
-        let param_mode = instruction / 10000 % 10;
-        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
-            eprintln!();
-            eprintln!("ERROR:");
-            eprintln!("Unrecognized parameter mode: {}", param_mode);
-            eprintln!("pc: {}", self.pc);
-            panic!();
-        }));
+        for param_number in 1..=3 {
+            let param_mode = instruction / 10i64.pow(param_number + 1) % 10;
+            param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
+                eprintln!();
+                eprintln!("ERROR:");
+                eprintln!("Unrecognized parameter mode: {}", param_mode);
+                eprintln!("pc: {}", self.pc);
+                panic!();
+            }));
+        }
 
         Instruction::new(command, param_modes)
     }
