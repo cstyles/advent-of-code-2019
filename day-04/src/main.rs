@@ -1,5 +1,3 @@
-
-
 fn main() {
     let range = 357253..=892942;
 
@@ -26,7 +24,7 @@ fn adjacent_check(digits: [i32; 6]) -> bool {
     let mut return_val = false;
 
     while i < 5 {
-        if num == digits[i+1] {
+        if num == digits[i + 1] {
             length += 1;
 
             if length == 2 {
@@ -42,7 +40,7 @@ fn adjacent_check(digits: [i32; 6]) -> bool {
             length = 1;
 
             if return_val {
-                return true
+                return true;
             }
         }
     }
@@ -52,8 +50,8 @@ fn adjacent_check(digits: [i32; 6]) -> bool {
 
 fn non_decrease_check(digits: [i32; 6]) -> bool {
     for i in 0..5 {
-        if digits[i] > digits[i+1] {
-            return false
+        if digits[i] > digits[i + 1] {
+            return false;
         }
     }
 
@@ -89,4 +87,3 @@ fn digits(num: i32) -> [i32; 6] {
         ones,
     ]
 }
-
