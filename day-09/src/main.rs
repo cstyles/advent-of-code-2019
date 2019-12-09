@@ -11,10 +11,11 @@ enum State {
     Yielded,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 enum ParamMode {
     Position,
     Immediate,
+    Relative,
 }
 
 impl ParamMode {
@@ -22,11 +23,13 @@ impl ParamMode {
         match number {
             0 => Ok(ParamMode::Position),
             1 => Ok(ParamMode::Immediate),
+            2 => Ok(ParamMode::Relative),
             _ => Err(()),
         }
     }
 }
 
+#[derive(Debug)]
 enum Command {
     Add,
     Multiply,
@@ -36,6 +39,7 @@ enum Command {
     JumpIfFalse,
     LessThan,
     Equals,
+    RelativeBaseOffset,
     Halt,
 }
 
@@ -50,6 +54,7 @@ impl Command {
             6 => Ok(Command::JumpIfFalse),
             7 => Ok(Command::LessThan),
             8 => Ok(Command::Equals),
+            9 => Ok(Command::RelativeBaseOffset),
             99 => Ok(Command::Halt),
             _ => Err(()),
         }
@@ -76,6 +81,7 @@ struct Processor {
     state: State,
     inputs: VecDeque<i64>,
     output: Option<i64>,
+    relative_base: i64,
 }
 
 impl Processor {
@@ -86,6 +92,7 @@ impl Processor {
             state: State::Halted,
             inputs: VecDeque::new(),
             output: None,
+            relative_base: 0,
         }
     }
 
@@ -128,104 +135,149 @@ impl Processor {
             panic!();
         }));
 
+        let param_mode = instruction / 10000 % 10;
+        param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
+            eprintln!();
+            eprintln!("ERROR:");
+            eprintln!("Unrecognized parameter mode: {}", param_mode);
+            eprintln!("pc: {}", self.pc);
+            panic!();
+        }));
+
         Instruction::new(command, param_modes)
     }
 
-    fn get_param(&self, offset: usize, param_mode: ParamMode) -> i64 {
+    fn get_param(&self, offset: usize, param_mode: ParamMode, write: bool) -> i64 {
+        let immediate = self.code[self.pc + offset + 1];
+        // dbg!(immediate);
+
         match param_mode {
             ParamMode::Position => {
-                let address = self.code[self.pc + offset + 1] as usize;
-                self.code[address]
+                let address = immediate;
+                if write {
+                    address
+                } else {
+                    self.code[address as usize]
+                }
+                // dbg!(self.code[address])
+                // self.code[address]
             }
-            ParamMode::Immediate => self.code[self.pc + offset + 1],
+            // ParamMode::Immediate => dbg!(immediate),
+            ParamMode::Immediate => immediate,
+            ParamMode::Relative => {
+                let address = immediate + self.relative_base;
+                if write {
+                    address
+                } else {
+                    self.code[address as usize]
+                }
+                // dbg!(address);
+                // dbg!(self.code[address]);
+            }
+
         }
     }
 
     fn execute_instruction(&mut self, instruction: Instruction) {
         match instruction.command {
             Command::Add => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
-                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r1 = self.get_param(1, instruction.param_modes[1], false);
+                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
-                let address = self.code[self.pc + 3] as usize;
                 self.code[address] = r0 + r1;
+                // println!("Add: code[{}] = {}", address, r0 + r1);
 
                 self.pc += 4;
             }
             Command::Multiply => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
-                let r1 = self.get_param(1, instruction.param_modes[1]);
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r1 = self.get_param(1, instruction.param_modes[1], false);
+                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
-                let address = self.code[self.pc + 3] as usize;
                 self.code[address] = r0 * r1;
+                // println!("Multiply: code[{}] = {}", address, r0 * r1);
 
                 self.pc += 4;
             }
             Command::Input => {
-                let address = self.code[self.pc + 1] as usize;
+                let address = self.get_param(0, instruction.param_modes[0], true) as usize;
 
                 // let num = prompt_for_input();
                 let num = self.inputs.pop_front().expect("`inputs` is empty");
 
-                self.code[address] = num;
+                self.code[address as usize] = num;
+                // println!("Input: code[{}] = {}", address, num);
 
                 self.pc += 2;
             }
             Command::Output => {
-                let address = self.code[self.pc + 1] as usize;
-                let r0 = self.code[address];
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
 
-                // println!("{}", r0);
-                self.output = Some(r0);
+                println!("Output: {}", r0);
+                // self.output = Some(r0);
 
                 self.pc += 2;
-                self.state = State::Yielded;
+                // self.state = State::Yielded;
             }
             Command::JumpIfTrue => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
 
                 if r0 != 0 {
-                    let r1 = self.get_param(1, instruction.param_modes[1]);
+                    let r1 = self.get_param(1, instruction.param_modes[1], false);
                     self.pc = r1 as usize;
+                    // println!("JumpIfTrue: pc = {}", self.pc);
                 } else {
+                    // println!("JumpIfTrue: no jump");
                     self.pc += 3;
                 }
             }
             Command::JumpIfFalse => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
 
                 if r0 == 0 {
-                    let r1 = self.get_param(1, instruction.param_modes[1]);
+                    let r1 = self.get_param(1, instruction.param_modes[1], false);
                     self.pc = r1 as usize;
+                    // println!("JumpIfFalse: pc = {}", self.pc);
                 } else {
+                    // println!("JumpIfFalse: no jump");
                     self.pc += 3;
                 }
             }
             Command::LessThan => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
-                let r1 = self.get_param(1, instruction.param_modes[1]);
-                let address = self.code[self.pc + 3] as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r1 = self.get_param(1, instruction.param_modes[1], false);
+                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
                 if r0 < r1 {
                     self.code[address] = 1;
+                    // println!("LessThan: code[{}] = {}", address, 1);
                 } else {
                     self.code[address] = 0;
+                    // println!("LessThan: code[{}] = {}", address, 0);
                 }
 
                 self.pc += 4;
             }
             Command::Equals => {
-                let r0 = self.get_param(0, instruction.param_modes[0]);
-                let r1 = self.get_param(1, instruction.param_modes[1]);
-                let address = self.code[self.pc + 3] as usize;
+                let r0 = self.get_param(0, instruction.param_modes[0], false);
+                let r1 = self.get_param(1, instruction.param_modes[1], false);
+                let address = self.get_param(2, instruction.param_modes[2], true) as usize;
 
                 if r0 == r1 {
                     self.code[address] = 1;
+                    // println!("Equals: code[{}] = {}", address, 1);
                 } else {
                     self.code[address] = 0;
+                    // println!("Equals: code[{}] = {}", address, 0);
                 }
 
                 self.pc += 4;
+            }
+            Command::RelativeBaseOffset => {
+                self.relative_base += self.get_param(0, instruction.param_modes[0], false);
+                // println!("relative_base = {}", self.relative_base);
+                self.pc += 2;
             }
             Command::Halt => {
                 self.state = State::Halted;
@@ -237,56 +289,16 @@ impl Processor {
 }
 
 fn main() {
-    let file_name = env::args().nth(1).expect("Please provide input file");
+    let input = env::args().nth(1).expect("Please provide initial input").parse().unwrap();
+    let file_name = env::args().nth(2).expect("Please provide input file");
     let code = load_code(file_name);
 
-    let mut max = 0;
-    for phase_settings in permutate(vec![5, 6, 7, 8, 9]) {
-        let mut amplifier_a = Processor::new(code.clone());
-        let mut amplifier_b = Processor::new(code.clone());
-        let mut amplifier_c = Processor::new(code.clone());
-        let mut amplifier_d = Processor::new(code.clone());
-        let mut amplifier_e = Processor::new(code.clone());
-
-        amplifier_a.inputs.push_back(phase_settings[0]);
-        amplifier_b.inputs.push_back(phase_settings[1]);
-        amplifier_c.inputs.push_back(phase_settings[2]);
-        amplifier_d.inputs.push_back(phase_settings[3]);
-        amplifier_e.inputs.push_back(phase_settings[4]);
-
-        amplifier_a.inputs.push_back(0);
-
-        loop {
-            amplifier_a.run_program();
-
-            amplifier_b.inputs.push_back(amplifier_a.output.unwrap());
-            amplifier_b.run_program();
-
-            amplifier_c.inputs.push_back(amplifier_b.output.unwrap());
-            amplifier_c.run_program();
-
-            amplifier_d.inputs.push_back(amplifier_c.output.unwrap());
-            amplifier_d.run_program();
-
-            amplifier_e.inputs.push_back(amplifier_d.output.unwrap());
-            amplifier_e.run_program();
-
-            amplifier_a.inputs.push_back(amplifier_e.output.unwrap());
-
-            if amplifier_e.state == State::Halted {
-                break;
-            }
-        }
-
-        let final_result = amplifier_e.output.unwrap();
-        if final_result > max {
-            max = final_result;
-        }
-    }
-
-    println!("max: {}", max);
+    let mut processer = Processor::new(code.clone());
+    processer.inputs.push_back(input);
+    processer.run_program();
 }
 
+#[allow(dead_code)]
 fn permutate(numbers: Vec<i64>) -> Vec<Vec<i64>> {
     if numbers.len() < 2 {
         return vec![numbers];
@@ -318,12 +330,18 @@ fn load_code<T>(filename: T) -> Vec<i64>
 where
     T: AsRef<Path>,
 {
-    fs::read_to_string(filename)
+    let mut code: Vec<i64> = fs::read_to_string(filename)
         .expect("Error reading input file")
         .trim()
         .split(',')
         .map(|num| num.parse().unwrap())
-        .collect()
+        .collect();
+
+    for _ in 0..10_000 {
+        code.push(0);
+    }
+
+    code
 }
 
 #[allow(dead_code)]
