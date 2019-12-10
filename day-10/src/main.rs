@@ -13,6 +13,108 @@ static HEIGHT: i32 = 30;
 // static HEIGHT: i32 = 10;
 
 fn main() {
+    part2();
+}
+
+fn part2() {
+    let filename = env::args().nth(1).expect("Please provide input file");
+    let map = load_map(filename);
+
+    let monitor = (22, 25);
+
+    // let mut angle = (-monitor.0, 0);
+    let mut angle = (0, -monitor.1);
+
+    // println!("{:?}", angle);
+    // println!("{:?}", reduce(angle));
+
+    let mut vaporized: Vec<(i32, i32)> = Vec::new();
+
+    'outer: while monitor.0 + angle.0 < WIDTH {
+        let reduced_angle = reduce(angle);
+        let mut final_angle = reduced_angle;
+        println!("angle:         {:?}", angle);
+        println!("reduced_angle: {:?}", reduced_angle);
+        println!();
+
+        while final_angle != angle {
+            if try_to_vaporize(&map, monitor, final_angle) {
+                let ugh = (monitor.0 + final_angle.0, monitor.1 + final_angle.1);
+                vaporized.push(ugh);
+                angle.0 += 1;
+                println!("vaporized {:?}", ugh);
+                continue 'outer;
+            }
+
+            final_angle.0 += reduced_angle.0;
+            final_angle.1 += reduced_angle.1;
+        }
+
+        angle.0 += 1;
+    }
+
+    // angle.0 -= 1;
+    // angle.1 += 1;
+    // while monitor.1 + angle.1 < HEIGHT {
+    //     let reduced_angle = reduce(angle);
+    //     println!("angle:         {:?}", angle);
+    //     println!("reduced_angle: {:?}", reduced_angle);
+    //     println!();
+    //     angle.1 += 1;
+    // }
+
+    // angle.1 -= 1;
+    // angle.0 -= 1;
+    // while monitor.0 + angle.0 > 0 {
+    //     let reduced_angle = reduce(angle);
+    //     println!("angle:         {:?}", angle);
+    //     println!("reduced_angle: {:?}", reduced_angle);
+    //     println!();
+    //     angle.0 -= 1;
+    // }
+
+    // angle.0 += 1;
+    // angle.1 -= 1;
+    // while monitor.1 + angle.1 > 0 {
+    //     let reduced_angle = reduce(angle);
+    //     println!("angle:         {:?}", angle);
+    //     println!("reduced_angle: {:?}", reduced_angle);
+    //     println!();
+    //     angle.1 -= 1;
+    // }
+
+    // angle.1 += 1;
+    // angle.0 += 1;
+
+
+    // println!("{:#?}", vaporized);
+
+
+    // loop {
+    // }
+}
+
+fn try_to_vaporize(map: &Vec<char>, monitor: (i32, i32), angle: (i32, i32)) -> bool {
+    println!("{:?}", angle);
+    let coords = (monitor.0 + angle.0, monitor.1 + angle.1);
+    println!("{:?}", coords);
+    get_tile(&map, coords.0, coords.1) == '#'
+}
+
+fn reduce(angle: (i32,  i32)) -> (i32, i32) {
+    let mut return_angle = (angle.0, angle.1);
+
+    let gcd = gcd(angle.0, angle.1);
+
+    if gcd > 1 {
+        return_angle.0 /= gcd;
+        return_angle.1 /= gcd;
+    }
+
+    return_angle
+}
+
+fn part1() {
     let filename = env::args().nth(1).expect("Please provide input file");
     let map = load_map(filename);
 
@@ -108,11 +210,12 @@ fn main() {
             // println!();
 
             visible += 1;
+            // println!("{:?}", other_asteroid);
         }
         hm.insert(*current_asteroid, visible);
     }
 
-    println!("{:#?}", hm);
+    // println!("{:#?}", hm);
 
     let mut max = 0;
     for (_asteroid, &count) in &hm {
