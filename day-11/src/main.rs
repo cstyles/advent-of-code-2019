@@ -330,7 +330,7 @@ fn main() {
     let code = load_code(file_name);
 
     let mut processer = Processor::new(code.clone());
-    processer.inputs.push_back(0);
+    processer.inputs.push_back(1);
 
     let mut x: i32 = 0;
     let mut y: i32 = 0;
@@ -349,7 +349,7 @@ fn main() {
         let paint_color = processer.output.unwrap();
         processer.run_program();
         let turn_dir = processer.output.unwrap();
-        println!("Outputs: {}, {}", paint_color, turn_dir);
+        // println!("Outputs: {}, {}", paint_color, turn_dir);
 
         let color_to_paint = match paint_color {
             0 => Color::Black,
@@ -366,7 +366,7 @@ fn main() {
             // println!("{:?} already painted", (x, y));
         }
 
-        println!("Painting {:?} {:?}", (x, y), color_to_paint);
+        // println!("Painting {:?} {:?}", (x, y), color_to_paint);
         grid.insert((x, y), color_to_paint);
 
         let turn_direction = match turn_dir {
@@ -378,11 +378,11 @@ fn main() {
             },
         };
 
-        println!("Turning {:?}", turn_direction);
+        // println!("Turning {:?}", turn_direction);
 
         facing = facing.turn(turn_direction);
 
-        println!("Now facing {:?}", facing);
+        // println!("Now facing {:?}", facing);
 
         match facing {
             Up => {
@@ -399,15 +399,53 @@ fn main() {
             }
         }
 
-        println!("Now at {:?}", (x, y));
+        // println!("Now at {:?}", (x, y));
 
         let current_color = grid.get(&(x, y)).unwrap_or(&Color::Black);
         processer.inputs.push_back(current_color.to_num());
 
-        println!();
+        // println!();
     }
 
-    println!("total_painted: {}", total_painted);
+    // println!("total_painted: {}", total_painted);
+
+    // println!("{:?}", grid);
+
+    let mut max_x = 0;
+    let mut max_y = 0;
+    for key in grid.keys() {
+        let x = key.0;
+        let y = key.1;
+
+        if x > max_x {
+            max_x = x;
+        }
+
+        if y > max_y {
+            max_y = y;
+        }
+    }
+    println!("{}, {}", max_x, max_y);
+
+    let mut image: [char; 258] = ['.'; 258];
+
+    for (coords, color) in grid {
+        let offset = coords.0 + coords.1 * 43;
+        let character = match color {
+            Color::Black => '.',
+            Color::White => '#',
+        };
+        image[offset as usize] = character;
+    }
+
+    for y in 0..6 {
+        for x in 0..43 {
+            let offset = y * 43 + x;
+            print!("{}", image[offset as usize]);
+        }
+
+        println!();
+    }
 }
 
 #[allow(dead_code)]
