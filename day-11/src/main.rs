@@ -402,22 +402,23 @@ fn main() {
 
     // ==== Part 2 ====
 
-    let max_x = grid.keys().map(|key| key.0).max().unwrap() + 1;
-    let max_y = grid.keys().map(|key| key.1).max().unwrap() + 1;
+    let max_x = (grid.keys().map(|key| key.0).max().unwrap() + 1) as usize;
+    let max_y = (grid.keys().map(|key| key.1).max().unwrap() + 1) as usize;
 
-    let total_pixels = (max_x * max_y) as usize;
-    let mut image: Vec<char> = Vec::with_capacity(total_pixels);
-    image.resize(total_pixels, ' ');
+    let mut image: Vec<Vec<char>> = Vec::new();
+    let mut row: Vec<char> = Vec::new();
+    row.resize(max_x, ' ');
+    image.resize(max_y, row);
 
     for (coords, color) in grid {
-        let offset = coords.0 + coords.1 * max_x;
-        image[offset as usize] = color.into();
+        let x = coords.0 as usize;
+        let y = coords.1 as usize;
+        image[y][x] = color.into();
     }
 
     for y in 0..max_y {
         for x in 0..max_x {
-            let offset = y * max_x + x;
-            print!("{}", image[offset as usize]);
+            print!("{}", image[y][x]);
         }
 
         println!();
