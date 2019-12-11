@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use std::convert::{TryFrom, TryInto};
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -18,13 +19,15 @@ enum ParamMode {
     Relative,
 }
 
-impl ParamMode {
-    fn from(number: i64) -> Result<ParamMode, ()> {
+impl TryFrom<i64> for ParamMode {
+    type Error = &'static str;
+
+    fn try_from(number: i64) -> Result<Self, Self::Error> {
         match number {
             0 => Ok(ParamMode::Position),
             1 => Ok(ParamMode::Immediate),
             2 => Ok(ParamMode::Relative),
-            _ => Err(()),
+            _ => Err("Unrecognized parameter mode"),
         }
     }
 }
@@ -43,8 +46,10 @@ enum Command {
     Halt,
 }
 
-impl Command {
-    fn from(number: i64) -> Result<Command, ()> {
+impl TryFrom<i64> for Command {
+    type Error = &'static str;
+
+    fn try_from(number: i64) -> Result<Self, Self::Error> {
         match number {
             1 => Ok(Command::Add),
             2 => Ok(Command::Multiply),
@@ -56,7 +61,7 @@ impl Command {
             8 => Ok(Command::Equals),
             9 => Ok(Command::RelativeBaseOffset),
             99 => Ok(Command::Halt),
-            _ => Err(()),
+            _ => Err("Unrecognized command"),
         }
     }
 }
@@ -111,20 +116,18 @@ impl Processor {
         let mut param_modes = vec![];
 
         let opcode = instruction % 100;
-        let command = Command::from(opcode).unwrap_or_else(|_err| {
-            eprintln!();
+        let command = opcode.try_into().unwrap_or_else(|err| {
             eprintln!("ERROR:");
-            eprintln!("Unrecognized command: {}", opcode);
+            eprintln!("{}: {}", err, opcode);
             eprintln!("pc: {}", self.pc);
             panic!();
         });
 
         for param_number in 1..=3 {
             let param_mode = instruction / 10i64.pow(param_number + 1) % 10;
-            param_modes.push(ParamMode::from(param_mode).unwrap_or_else(|_err| {
-                eprintln!();
+            param_modes.push(param_mode.try_into().unwrap_or_else(|err| {
                 eprintln!("ERROR:");
-                eprintln!("Unrecognized parameter mode: {}", param_mode);
+                eprintln!("{}: {}", err, param_mode);
                 eprintln!("pc: {}", self.pc);
                 panic!();
             }));
