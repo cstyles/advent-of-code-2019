@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -190,11 +190,10 @@ impl Processor {
             Command::Output => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
 
-                println!("Output: {}", r0);
-                // self.output = Some(r0);
+                self.output = Some(r0);
 
                 self.pc += 2;
-                // self.state = State::Yielded;
+                self.state = State::Yielded;
             }
             Command::JumpIfTrue => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
@@ -255,18 +254,160 @@ impl Processor {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+use Direction::*;
+
+impl Direction {
+    // fn from(num: i32) -> Self {
+    //     match num {
+    //         0 => Direction::Up,
+    //         1 => Direction::Right
+    //         2 => Direction::Down,
+    //         3 => Direction::Left,
+    //     }
+    // }
+
+    // fn to_i
+
+    fn turn(&self, dir: Direction) -> Self {
+        match self {
+            Up => {
+                if dir == Left {
+                    Left
+                } else {
+                    Right
+                }
+            }
+            Right => {
+                if dir == Left {
+                    Up
+                } else {
+                    Down
+                }
+            }
+            Down => {
+                if dir == Left {
+                    Right
+                } else {
+                    Left
+                }
+            }
+            Left => {
+                if dir == Left {
+                    Down
+                } else {
+                    Up
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum Color {
+    Black,
+    White,
+}
+
+impl Color {
+    fn to_num(&self) -> i64 {
+        match self {
+            Color::Black => 0,
+            Color::White => 1,
+        }
+    }
+}
+
 fn main() {
-    let input = env::args()
-        .nth(1)
-        .expect("Please provide initial input")
-        .parse()
-        .unwrap();
-    let file_name = env::args().nth(2).expect("Please provide input file");
+    let file_name = env::args().nth(1).expect("Please provide input file");
     let code = load_code(file_name);
 
     let mut processer = Processor::new(code.clone());
-    processer.inputs.push_back(input);
-    processer.run_program();
+    processer.inputs.push_back(0);
+
+    let mut x: i32 = 0;
+    let mut y: i32 = 0;
+    let mut facing: Direction = Direction::Up;
+    let mut grid: HashMap<(i32, i32), Color> = HashMap::new();
+    let mut total_painted = 0;
+    // grid.insert((x, y), Color::Black);
+
+    processer.state = State::Running;
+    while processer.state != State::Halted {
+        processer.run_program();
+        if processer.state == State::Halted {
+            break
+        }
+
+        let paint_color = processer.output.unwrap();
+        processer.run_program();
+        let turn_dir = processer.output.unwrap();
+        println!("Outputs: {}, {}", paint_color, turn_dir);
+
+        let color_to_paint = match paint_color {
+            0 => Color::Black,
+            1 => Color::White,
+            _ => unreachable!(),
+        };
+
+        // let current_color = grid.get(&(x, y)).unwrap_or(&Color::Black);
+        // if current_color != color_to_paint {
+        if !grid.contains_key(&(x, y)) {
+            // println!("{:?} has not been painted yet", (x, y));
+            total_painted += 1;
+        } else {
+            // println!("{:?} already painted", (x, y));
+        }
+
+        println!("Painting {:?} {:?}", (x, y), color_to_paint);
+        grid.insert((x, y), color_to_paint);
+
+        let turn_direction = match turn_dir {
+            0 => Direction::Left, // left 90 deg
+            1 => Direction::Right, // right 90 deg
+            _ => {
+                println!("{:?}", turn_dir);
+                unreachable!();
+            },
+        };
+
+        println!("Turning {:?}", turn_direction);
+
+        facing = facing.turn(turn_direction);
+
+        println!("Now facing {:?}", facing);
+
+        match facing {
+            Up => {
+                y -= 1;
+            }
+            Left => {
+                x -= 1;
+            }
+            Down => {
+                y += 1;
+            }
+            Right => {
+                x += 1;
+            }
+        }
+
+        println!("Now at {:?}", (x, y));
+
+        let current_color = grid.get(&(x, y)).unwrap_or(&Color::Black);
+        processer.inputs.push_back(current_color.to_num());
+
+        println!();
+    }
+
+    println!("total_painted: {}", total_painted);
 }
 
 #[allow(dead_code)]
