@@ -421,34 +421,6 @@ fn main() {
     }
 }
 
-#[allow(dead_code)]
-fn permutate(numbers: Vec<i64>) -> Vec<Vec<i64>> {
-    if numbers.len() < 2 {
-        return vec![numbers];
-    }
-
-    let mut results = vec![];
-    for number in &numbers {
-        // Vector containing all numbers except the number we've "fixed"
-        let rest = numbers
-            .clone()
-            .into_iter()
-            .filter(|elem| elem != number)
-            .collect();
-
-        // Recursively generate permutations for the non-fixed numbers
-        let permutations = permutate(rest);
-
-        // Create our final permutations by prepending the fixed number
-        for mut permutation in permutations {
-            permutation.insert(0, *number);
-            results.push(permutation);
-        }
-    }
-
-    results
-}
-
 fn load_code<T>(filename: T) -> Vec<i64>
 where
     T: AsRef<Path>,
