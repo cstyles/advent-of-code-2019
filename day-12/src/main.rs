@@ -1,11 +1,10 @@
-// use std::collections::{HashMap, VecDeque};
-// use std::convert::{TryFrom, TryInto};
 use std::env;
 use std::fs;
-// use std::io::{self, Write};
 use std::path::Path;
 
-#[derive(Debug)]
+use regex::Regex;
+
+#[derive(Clone, Copy, Debug, Hash)]
 struct Position {
     x: i32,
     y: i32,
@@ -14,11 +13,7 @@ struct Position {
 
 impl Default for Position {
     fn default() -> Self {
-        Position {
-            x: 0,
-            y: 0,
-            z: 0,
-        }
+        Position { x: 0, y: 0, z: 0 }
     }
 }
 
@@ -30,30 +25,10 @@ struct Moon {
 
 impl Moon {
     fn apply_gravity(&mut self, other1: &Moon, other2: &Moon, other3: &Moon) {
-        for other in vec![other1, other2, other3] {
-            self.velocity.x += if self.position.x < other.position.x {
-                1
-            } else if self.position.x > other.position.x {
-                -1
-            } else {
-                0
-            };
-
-            self.velocity.y += if self.position.y < other.position.y {
-                1
-            } else if self.position.y > other.position.y {
-                -1
-            } else {
-                0
-            };
-
-            self.velocity.z += if self.position.z < other.position.z {
-                1
-            } else if self.position.z > other.position.z {
-                -1
-            } else {
-                0
-            };
+        for other in &[other1, other2, other3] {
+            self.velocity.x += velocity_adjust(self.position.x, other.position.x);
+            self.velocity.y += velocity_adjust(self.position.y, other.position.y);
+            self.velocity.z += velocity_adjust(self.position.z, other.position.z);
         }
     }
 
@@ -77,79 +52,94 @@ impl Moon {
 }
 
 fn main() {
-    // let file_name = env::args().nth(1).expect("Please provide input file");
-    // let input = load_input(file_name);
+    let part: i32 = env::args()
+        .nth(1)
+        .expect("Please provide part (1 or 2)")
+        .parse()
+        .expect("Part was not a valid number");
 
-    // Debug1
-    let mut io = Moon {
-        position: Position { x: -1, y: 0, z: 2 },
+    let file_name = env::args().nth(2).expect("Please provide input file");
+    let initial_positions = load_input(file_name);
+
+    let io = Moon {
+        position: initial_positions[0],
+        velocity: Position::default(),
+    };
+    let europa = Moon {
+        position: initial_positions[1],
+        velocity: Position::default(),
+    };
+    let ganymede = Moon {
+        position: initial_positions[2],
+        velocity: Position::default(),
+    };
+    let callisto = Moon {
+        position: initial_positions[3],
         velocity: Position::default(),
     };
 
-    let mut europa  = Moon {
-        position: Position { x: 2, y: -10, z: -7 },
-        velocity: Position::default(),
+    match part {
+        1 => part1(io, europa, ganymede, callisto),
+        2 => part2(io, europa, ganymede, callisto),
+        _ => panic!("Not a valid part!"),
     };
+}
 
-    let mut ganymede = Moon {
-        position: Position { x: 4, y: -8, z: 8 },
-        velocity: Position::default(),
-    };
+fn part1(mut io: Moon, mut europa: Moon, mut ganymede: Moon, mut callisto: Moon) {
+    let iterations: i32 = env::args()
+        .nth(3)
+        .expect("Please provide number of iterations")
+        .parse()
+        .expect("Iterations was not a valid number");
 
-    let mut callisto = Moon {
-        position: Position { x: 3, y: 5, z: -1 },
-        velocity: Position::default(),
-    };
+    for _ in 0..iterations {
+        io.apply_gravity(&europa, &ganymede, &callisto);
+        europa.apply_gravity(&io, &ganymede, &callisto);
+        ganymede.apply_gravity(&io, &europa, &callisto);
+        callisto.apply_gravity(&io, &europa, &ganymede);
 
-    // Debug 2
-    let mut io = Moon {
-        position: Position { x: -8, y: -10, z: 0 },
-        velocity: Position::default(),
-    };
+        io.apply_velocity();
+        europa.apply_velocity();
+        ganymede.apply_velocity();
+        callisto.apply_velocity();
+    }
 
-    let mut europa  = Moon {
-        position: Position { x: 5, y: 5, z: 10 },
-        velocity: Position::default(),
-    };
+    let total_energy = io.total_energy()
+        + europa.total_energy()
+        + ganymede.total_energy()
+        + callisto.total_energy();
 
-    let mut ganymede = Moon {
-        position: Position { x: 2, y: -7, z: 3 },
-        velocity: Position::default(),
-    };
+    println!("Total Energy: {}", total_energy);
+}
 
-    let mut callisto = Moon {
-        position: Position { x: 9, y: -8, z: -3 },
-        velocity: Position::default(),
-    };
+fn part2(mut io: Moon, mut europa: Moon, mut ganymede: Moon, mut callisto: Moon) {
+    let mut cycle_x = 0;
+    let mut cycle_y = 0;
+    let mut cycle_z = 0;
 
-    // My input
-    let mut io = Moon {
-        position: Position { x: 3, y: 15, z: 8 },
-        velocity: Position::default(),
-    };
+    let initial_state_x = (
+        (io.position.x, io.velocity.x),
+        (europa.position.x, europa.velocity.x),
+        (ganymede.position.x, ganymede.velocity.x),
+        (callisto.position.x, callisto.velocity.x),
+    );
 
-    let mut europa  = Moon {
-        position: Position { x: 5, y: -1, z: -2 },
-        velocity: Position::default(),
-    };
+    let initial_state_y = (
+        (io.position.y, io.velocity.y),
+        (europa.position.y, europa.velocity.y),
+        (ganymede.position.y, ganymede.velocity.y),
+        (callisto.position.y, callisto.velocity.y),
+    );
 
-    let mut ganymede = Moon {
-        position: Position { x: -10, y: 8, z: 2 },
-        velocity: Position::default(),
-    };
+    let initial_state_z = (
+        (io.position.z, io.velocity.z),
+        (europa.position.z, europa.velocity.z),
+        (ganymede.position.z, ganymede.velocity.z),
+        (callisto.position.z, callisto.velocity.z),
+    );
 
-    let mut callisto = Moon {
-        position: Position { x: 8, y: 4, z: -5 },
-        velocity: Position::default(),
-    };
-
-    println!("{:?}", io);
-    println!("{:?}", europa);
-    println!("{:?}", ganymede);
-    println!("{:?}", callisto);
-    println!();
-
-    for step in 0..1000 {
+    let mut step = 1;
+    while [cycle_x, cycle_y, cycle_z].iter().any(|&state| state == 0) {
         io.apply_gravity(&europa, &ganymede, &callisto);
         europa.apply_gravity(&io, &ganymede, &callisto);
         ganymede.apply_gravity(&io, &europa, &callisto);
@@ -160,46 +150,84 @@ fn main() {
         ganymede.apply_velocity();
         callisto.apply_velocity();
 
-        if step % 10 != 99 {
-            println!("{}", step);
-            println!("{:?}", io);
-            println!("{:?}", europa);
-            println!("{:?}", ganymede);
-            println!("{:?}", callisto);
-            println!();
+        let state_x = (
+            (io.position.x, io.velocity.x),
+            (europa.position.x, europa.velocity.x),
+            (ganymede.position.x, ganymede.velocity.x),
+            (callisto.position.x, callisto.velocity.x),
+        );
+
+        if state_x == initial_state_x {
+            cycle_x = step;
         }
+
+        let state_y = (
+            (io.position.y, io.velocity.y),
+            (europa.position.y, europa.velocity.y),
+            (ganymede.position.y, ganymede.velocity.y),
+            (callisto.position.y, callisto.velocity.y),
+        );
+
+        if state_y == initial_state_y {
+            cycle_y = step;
+        }
+
+        let state_z = (
+            (io.position.z, io.velocity.z),
+            (europa.position.z, europa.velocity.z),
+            (ganymede.position.z, ganymede.velocity.z),
+            (callisto.position.z, callisto.velocity.z),
+        );
+
+        if state_z == initial_state_z {
+            cycle_z = step;
+        }
+
+        step += 1;
     }
 
-    println!("{:?}", io);
-    println!("{:?}", europa);
-    println!("{:?}", ganymede);
-    println!("{:?}", callisto);
-    println!();
-
-    println!("pot: {}, kin: {}, total: {}", io.potential_energy(), io.kinetic_energy(), io.total_energy());
-    println!("pot: {}, kin: {}, total: {}", europa.potential_energy(), europa.kinetic_energy(), europa.total_energy());
-    println!("pot: {}, kin: {}, total: {}", ganymede.potential_energy(), ganymede.kinetic_energy(), ganymede.total_energy());
-    println!("pot: {}, kin: {}, total: {}", callisto.potential_energy(), callisto.kinetic_energy(), callisto.total_energy());
-
-    println!();
-
-    println!("total total: {}", io.total_energy() + europa.total_energy() + ganymede.total_energy() + callisto.total_energy());
+    println!("Steps: {}", lcm(lcm(cycle_x, cycle_y), cycle_z));
 }
 
-fn load_input<T>(filename: T) -> Vec<i64>
+fn load_input<T>(filename: T) -> Vec<Position>
 where
     T: AsRef<Path>,
 {
-    let mut code: Vec<i64> = fs::read_to_string(filename)
+    fs::read_to_string(filename)
         .expect("Error reading input file")
-        .trim()
-        .split(',')
-        .map(|num| num.parse().unwrap())
-        .collect();
+        .lines()
+        .map(parse_line)
+        .collect()
+}
 
-    for _ in 0..10_000 {
-        code.push(0);
+fn parse_line(line: &str) -> Position {
+    let regex = Regex::new(r"<x=(?P<x>-?\d+), y=(?P<y>-?\d+), z=(?P<z>-?\d+)>").unwrap();
+    let captures = regex.captures(line).unwrap();
+
+    Position {
+        x: captures["x"].parse().unwrap(),
+        y: captures["y"].parse().unwrap(),
+        z: captures["z"].parse().unwrap(),
     }
+}
 
-    code
+fn velocity_adjust(this: i32, other: i32) -> i32 {
+    if this < other {
+        1
+    } else if this > other {
+        -1
+    } else {
+        0
+    }
+}
+
+fn lcm(a: i64, b: i64) -> i64 {
+    a * b / gcd(a, b)
+}
+
+fn gcd(a: i64, b: i64) -> i64 {
+    match b {
+        0 => a,
+        _ => gcd(b, a % b),
+    }
 }
