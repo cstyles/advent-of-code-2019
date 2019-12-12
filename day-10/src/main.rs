@@ -65,20 +65,21 @@ fn main() {
     println!("Part 1 (Max Visible): {}", max_angles);
 
     let visible_asteroids = get_visible_asteroids(&asteroids, monitoring_station);
-    let mut visible_asteroids2: Vec<&i64> = visible_asteroids.keys().collect();
+    let mut angles: Vec<&i64> = visible_asteroids.keys().collect();
 
-    visible_asteroids2.sort();
-    let visible_asteroids3 = visible_asteroids2.clone();
+    angles.sort();
 
-    let last = visible_asteroids2
+    let up_angle = float_to_int(-std::f64::consts::PI / 2.0);
+    let last = angles
         .iter()
-        .chain(visible_asteroids3.iter())
-        .skip_while(|angle| ***angle != 0)
+        .cycle()
+        .skip_while(|&angle| **angle != up_angle)
         .take(200)
         .last()
         .unwrap();
 
     let final_asteroid = visible_asteroids.get(last).unwrap();
+
     println!(
         "Part 2 (200th asteroid): {}",
         final_asteroid.x * 100 + final_asteroid.y
@@ -126,8 +127,7 @@ fn get_visible_asteroids(
         let dx = f64::from(other_asteroid.x - monitoring_station.x);
         let dy = f64::from(other_asteroid.y - monitoring_station.y);
         let angle = dy.atan2(dx);
-        let adjusted_angle = angle + std::f64::consts::PI / 2.0;
-        let angle_as_int = float_to_int(adjusted_angle);
+        let angle_as_int = float_to_int(angle);
 
         match angles.get(&angle_as_int) {
             None => {
