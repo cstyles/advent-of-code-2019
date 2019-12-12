@@ -1,19 +1,43 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::Path;
 
 use num::integer::gcd;
 
-static WIDTH: i32 = 30;
-static HEIGHT: i32 = 30;
-// static WIDTH: i32 = 20;
-// static HEIGHT: i32 = 20;
-// static WIDTH: i32 = 10;
-// static HEIGHT: i32 = 10;
-
 fn main() {
-    part2();
+    let part: i32 = env::args()
+        .nth(1)
+        .expect("Please provide part (1 or 2)")
+        .parse()
+        .expect("Part was not a valid number");
+
+    let filename = env::args().nth(2).expect("Please provide input file");
+    let map = load_map(filename);
+
+    match part {
+        1 => part1(&map),
+        2 => part2(),
+        _ => panic!("Not a valid part!"),
+    };
+}
+
+#[derive(PartialEq)]
+enum Tile {
+    Empty,
+    Asteroid,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Position {
+    x: i32,
+    y: i32,
+}
+
+impl Default for Position {
+    fn default() -> Self {
+        Position { x: 0, y: 0 }
+    }
 }
 
 fn part2() {
@@ -92,132 +116,75 @@ fn part2() {
     // let map = load_map(filename);
 }
 
-fn _part1() {
-    let filename = env::args().nth(1).expect("Please provide input file");
-    let map = load_map(filename);
+fn part1(map: &Vec<Vec<Tile>>) {
+    let mut asteroids: Vec<Position> = Vec::new();
 
-    // println!("{:#?}", map);
+    let height = map.len();
+    let width = map[0].len();
 
-    let mut asteroids: Vec<(i32, i32)> = Vec::new();
-
-    for y in 0..HEIGHT {
-        for x in 0..WIDTH {
-            let offset = y * WIDTH + x;
-            if map[offset as usize] == '#' {
-                asteroids.push((x, y));
+    for y in 0..height {
+        for x in 0..width {
+            if map[y][x] == Tile::Asteroid {
+                let position = Position {
+                    x: x as i32,
+                    y: y as i32,
+                };
+                asteroids.push(position);
             }
         }
     }
 
-    // println!("{:#?}", asteroids);
-    // println!("{:#?}", asteroids.len());
-
-    let mut hm: HashMap<(i32, i32), i32> = HashMap::new();
+    let mut max_angles = 0;
+    let mut monitoring_station = Position::default();
 
     for current_asteroid in &asteroids {
-        let mut visible = 0;
+        let mut angles: HashSet<i64> = HashSet::new();
 
-        'other: for other_asteroid in &asteroids {
+        for other_asteroid in &asteroids {
             if current_asteroid == other_asteroid {
                 continue;
             }
 
-            let ca_x = current_asteroid.0;
-            let ca_y = current_asteroid.1;
-
-            let oa_x = other_asteroid.0;
-            let oa_y = other_asteroid.1;
-
-            // let dx: i32 = ca_x - oa_x;
-            let dx: i32 = oa_x - ca_x;
-            // let dy: i32 = ca_y - oa_y;
-            let dy: i32 = oa_y - ca_y;
-
-            let mut dx_gcd = dx;
-            let mut dy_gcd = dy;
-
-            // println!("{:?}", (dx, dy));
-
-            // if dx == 0 {
-            //     if dy < 0 {
-            //         dy = -1;
-            //     } else {
-            //         dy = 1;
-            //     }
-            // }
-
-            // if dy == 0 {
-            //     if dx < 0 {
-            //         dx = -1;
-            //     } else {
-            //         dx = 1;
-            //     }
-            // }
-
-            // println!("{:?}, {:?}", other_asteroid, current_asteroid);
-            // println!("{:?}", (dx, dy));
-
-            let gcd = gcd(dx, dy);
-            // println!("{}", gcd);
-
-            if gcd > 1 {
-                dx_gcd /= gcd;
-                dy_gcd /= gcd;
-            }
-
-            let save_dx_gcd = dx_gcd;
-            let save_dy_gcd = dy_gcd;
-
-            // println!("ca: {:?}", (ca_x, ca_y));
-            // println!("oa: {:?}", (oa_x, oa_y));
-            // println!("d:  {:?}", (dx, dy));
-            // println!("dg: {:?}", (dx_gcd, dy_gcd));
-
-            while dx_gcd != dx || dy_gcd != dy {
-                let tile = (ca_x + dx_gcd, ca_y + dy_gcd);
-                if get_tile(&map, tile.0, tile.1) == '#' {
-                    // println!("blocked!");
-                    continue 'other;
-                }
-                // println!("ug: {:?}", tile);
-                // println!("hm: {:?}", (dx_gcd, dy_gcd));
-                dx_gcd += save_dx_gcd;
-                dy_gcd += save_dy_gcd;
-            }
-
-            // println!();
-
-            visible += 1;
-            // println!("{:?}", other_asteroid);
+            let dx = (other_asteroid.x - current_asteroid.x) as f64;
+            let dy = (other_asteroid.y - current_asteroid.y) as f64;
+            let angle = dx.atan2(dy);
+            angles.insert(float_to_int(angle));
         }
-        hm.insert(*current_asteroid, visible);
-    }
 
-    // println!("{:#?}", hm);
-
-    let mut max = 0;
-    for (_asteroid, &count) in &hm {
-        if count > max {
-            max = count;
+        if angles.len() > max_angles {
+            max_angles = angles.len();
+            monitoring_station = *current_asteroid;
         }
     }
 
-    println!("max: {}", max);
+    println!("{}", max_angles);
+    println!("{:?}", monitoring_station);
 }
 
-fn load_map<T>(filename: T) -> Vec<char>
+fn load_map<T>(filename: T) -> Vec<Vec<Tile>>
 where
     T: AsRef<Path>,
 {
-    fs::read_to_string(filename)
-        .expect("Error reading input file")
-        .trim()
-        .chars()
-        .filter(|&c| c != '\n')
-        .collect()
+    let input = fs::read_to_string(filename)
+        .expect("Error reading input file");
+
+    let mut map = Vec::new();
+    map.push(Vec::new());
+
+    for character in input.trim().chars() {
+        match character {
+            '\n' => map.push(Vec::new()),
+            '.' => map.last_mut().unwrap().push(Tile::Empty),
+            '#' => map.last_mut().unwrap().push(Tile::Asteroid),
+            _ => panic!("Invalid character"),
+        }
+    }
+
+    map
 }
 
-fn get_tile(map: &Vec<char>, x: i32, y: i32) -> char {
-    let offset = y * WIDTH + x;
-    map[offset as usize]
+// f64 doesn't implement Eq so we need to convert to i64
+// This shoud be fine for this simple use case
+fn float_to_int(float: f64) -> i64 {
+    (float * 1_000_000_000.0).round() as i64
 }
