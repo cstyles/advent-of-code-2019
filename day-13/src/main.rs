@@ -398,13 +398,13 @@ fn part2(code: Vec<i64>, max_x: i64, max_y: i64, debug: bool) {
             }
         }
 
-        let x: i64 = processor.output.expect("No color_to_paint output");
+        let x: i64 = processor.output.expect("No x output");
 
         processor.run_program();
-        let y: i64 = processor.output.expect("No turn_direction output");
+        let y: i64 = processor.output.expect("No y output");
 
         processor.run_program();
-        let tile_id: i64 = processor.output.expect("No turn_direction output");
+        let tile_id: i64 = processor.output.expect("No tile_id output");
 
         if x == -1 && y == 0 {
             score = tile_id;
