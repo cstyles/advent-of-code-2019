@@ -390,7 +390,7 @@ fn main() {
     let file_name = env::args().nth(2).expect("Please provide input file");
     let code = load_code(file_name);
 
-    let mut processer = Processor::new(code);
+    let mut processor = Processor::new(code);
 
     // let initial_input = match part {
     //     1 => 0,
@@ -398,7 +398,7 @@ fn main() {
     //     _ => panic!("Not a valid part!"),
     // };
 
-    // processer.inputs.push_back(initial_input);
+    // processor.inputs.push_back(initial_input);
 
     // let mut x: i32 = 0;
     // let mut y: i32 = 0;
@@ -416,39 +416,39 @@ fn main() {
     //     }
     // }
 
-    processer.state = State::Running;
-    processer.code[0] = 2;
+    processor.state = State::Running;
+    processor.code[0] = 2;
 
     // let mut paddle_x = 0;
     // let mut paddle_y = 0;
     // let mut ball_x = 0;
     // let mut ball_y = 0;
 
-    while processer.state != State::Halted {
-        processer.run_program();
-        if processer.state == State::Halted {
+    while processor.state != State::Halted {
+        processor.run_program();
+        if processor.state == State::Halted {
             break;
         }
 
-        let x: i64 = processer.output.expect("No color_to_paint output");
+        let x: i64 = processor.output.expect("No color_to_paint output");
 
-        processer.run_program();
-        let y: i64 = processer.output.expect("No turn_direction output");
+        processor.run_program();
+        let y: i64 = processor.output.expect("No turn_direction output");
 
-        processer.run_program();
-        // let tile_id: Tile = processer.output.expect("No turn_direction output").try_into().unwrap();
-        let tile_id: i64 = processer.output.expect("No turn_direction output");
+        processor.run_program();
+        // let tile_id: Tile = processor.output.expect("No turn_direction output").try_into().unwrap();
+        let tile_id: i64 = processor.output.expect("No turn_direction output");
 
         if tile_id == 3 {
             // paddle_x = x;
             // paddle_y = y;
-            processer.paddle_x = x;
-            processer.paddle_y = y;
+            processor.paddle_x = x;
+            processor.paddle_y = y;
         }
 
         if tile_id == 4 {
-            processer.ball_x = x;
-            processer.ball_y = y;
+            processor.ball_x = x;
+            processor.ball_y = y;
             // ball_x = x;
             // ball_y = y;
         }

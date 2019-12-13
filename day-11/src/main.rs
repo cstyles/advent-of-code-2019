@@ -349,7 +349,7 @@ fn main() {
     let file_name = env::args().nth(2).expect("Please provide input file");
     let code = load_code(file_name);
 
-    let mut processer = Processor::new(code);
+    let mut processor = Processor::new(code);
 
     let initial_input = match part {
         1 => 0,
@@ -357,7 +357,7 @@ fn main() {
         _ => panic!("Not a valid part!"),
     };
 
-    processer.inputs.push_back(initial_input);
+    processor.inputs.push_back(initial_input);
 
     let mut x: i32 = 0;
     let mut y: i32 = 0;
@@ -365,17 +365,17 @@ fn main() {
     let mut grid: HashMap<(i32, i32), Color> = HashMap::new();
     let mut total_painted = 0;
 
-    processer.state = State::Running;
-    while processer.state != State::Halted {
-        processer.run_program();
-        if processer.state == State::Halted {
+    processor.state = State::Running;
+    while processor.state != State::Halted {
+        processor.run_program();
+        if processor.state == State::Halted {
             break;
         }
 
-        let color_to_paint: Color = processer.output.expect("No color_to_paint output").into();
+        let color_to_paint: Color = processor.output.expect("No color_to_paint output").into();
 
-        processer.run_program();
-        let turn_direction: Direction = processer.output.expect("No turn_direction output").into();
+        processor.run_program();
+        let turn_direction: Direction = processor.output.expect("No turn_direction output").into();
 
         if !grid.contains_key(&(x, y)) {
             total_painted += 1;
@@ -392,7 +392,7 @@ fn main() {
         }
 
         let current_color: Color = *grid.get(&(x, y)).unwrap_or(&Black);
-        processer.inputs.push_back(current_color.into());
+        processor.inputs.push_back(current_color.into());
     }
 
     if part == 1 {

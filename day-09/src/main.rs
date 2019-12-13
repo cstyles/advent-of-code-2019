@@ -264,9 +264,9 @@ fn main() {
     let file_name = env::args().nth(2).expect("Please provide input file");
     let code = load_code(file_name);
 
-    let mut processer = Processor::new(code.clone());
-    processer.inputs.push_back(input);
-    processer.run_program();
+    let mut processor = Processor::new(code.clone());
+    processor.inputs.push_back(input);
+    processor.run_program();
 }
 
 #[allow(dead_code)]
