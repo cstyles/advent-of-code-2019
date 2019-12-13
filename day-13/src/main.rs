@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::env;
 use std::fs;
@@ -190,16 +190,15 @@ impl Processor {
             Command::Input => {
                 let address = self.get_address(0, instruction.param_modes[0]);
 
-                println!("paddle: {} {}", self.paddle_x, self.paddle_y);
-                println!("ball: {} {}", self.ball_x, self.ball_y);
-                let num = if self.ball_x < self.paddle_x { 
+                let num = if self.ball_x < self.paddle_x {
                     -1
                 } else if self.ball_x > self.paddle_x {
                     1
                 } else {
                     0
                 };
-                // let _ = prompt_for_input();
+
+                // let num = prompt_for_input();
                 // let num = self.inputs.pop_front().expect("`inputs` is empty");
 
                 self.code[address] = num;
@@ -273,89 +272,6 @@ impl Processor {
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-use Direction::*;
-
-impl From<i64> for Direction {
-    fn from(num: i64) -> Self {
-        match num {
-            0 => Left,
-            1 => Right,
-            _ => panic!(),
-        }
-    }
-}
-
-impl Direction {
-    fn turn(&self, dir: Direction) -> Self {
-        match self {
-            Up => match dir {
-                Left => Left,
-                Right => Right,
-                _ => panic!(),
-            },
-            Right => match dir {
-                Left => Up,
-                Right => Down,
-                _ => panic!(),
-            },
-            Down => match dir {
-                Left => Right,
-                Right => Left,
-                _ => panic!(),
-            },
-            Left => match dir {
-                Left => Down,
-                Right => Up,
-                _ => panic!(),
-            },
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Color {
-    Black,
-    White,
-}
-
-use Color::*;
-
-impl From<i64> for Color {
-    fn from(num: i64) -> Self {
-        match num {
-            0 => Black,
-            1 => White,
-            _ => panic!(),
-        }
-    }
-}
-
-impl Into<i64> for Color {
-    fn into(self) -> i64 {
-        match self {
-            Black => 0,
-            White => 1,
-        }
-    }
-}
-
-impl Into<char> for Color {
-    fn into(self) -> char {
-        match self {
-            Black => ' ',
-            White => '█',
-        }
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Tile {
     Empty,
@@ -381,49 +297,74 @@ impl TryFrom<i64> for Tile {
 }
 
 fn main() {
-    let part: i32 = env::args()
-        .nth(1)
-        .expect("Please provide part (1 or 2)")
-        .parse()
-        .expect("Part was not a valid number");
-
-    let file_name = env::args().nth(2).expect("Please provide input file");
+    let file_name = env::args().nth(1).expect("Please provide input file");
     let code = load_code(file_name);
 
+    let (max_x, max_y) = part1(code.clone());
+    part2(code.clone(), max_x, max_y);
+}
+
+fn part1(code: Vec<i64>) -> (i64, i64) {
     let mut processor = Processor::new(code);
 
-    // let initial_input = match part {
-    //     1 => 0,
-    //     2 => 1,
-    //     _ => panic!("Not a valid part!"),
-    // };
+    let mut max_x = 0;
+    let mut max_y = 0;
+    let mut blocks = 0;
 
-    // processor.inputs.push_back(initial_input);
-
-    // let mut x: i32 = 0;
-    // let mut y: i32 = 0;
-    // let mut facing: Direction = Up;
-    // let mut grid: HashMap<(i32, i32), Color> = HashMap::new();
-    // let mut total_painted = 0;
-
-    // let mut image: Vec<i64> = Vec::new();
-
-    let mut image: [i64; 798] = [0; 798];
-    // for y in 0..21 {
-    //     for x in 0..38 {
-    //         let offset = (y * 38 + x) as usize;
-    //         image[offset] = 0;
-    //     }
-    // }
+    processor.inputs.push_back(0);
 
     processor.state = State::Running;
-    processor.code[0] = 2;
+    while processor.state != State::Halted {
+        processor.run_program();
 
-    // let mut paddle_x = 0;
-    // let mut paddle_y = 0;
-    // let mut ball_x = 0;
-    // let mut ball_y = 0;
+        if processor.state == State::Halted {
+            break;
+        }
 
+        let x: i64 = processor.output.expect("No x output");
+
+        processor.run_program();
+        let y: i64 = processor.output.expect("No y output");
+
+        processor.run_program();
+        let tile_id = processor.output.expect("No tile_id output");
+
+        let tile: Tile = tile_id.try_into().unwrap_or_else(|err| {
+            eprintln!("{}: {}", err, tile_id);
+            panic!();
+        });
+
+        if x > max_x {
+            max_x = x;
+        }
+
+        if y > max_y {
+            max_y = y;
+        }
+
+        if tile == Tile::Block {
+            blocks += 1;
+        }
+    }
+
+    println!("Part 1 (# of blocks): {}", blocks);
+
+    (max_x + 1, max_y + 1)
+}
+
+fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
+    let mut processor = Processor::new(code);
+    processor.code[0] = 2; // Insert two coins to play for free!
+
+    // Create two dimensional array from dimensions that we inferred from part 1
+    let mut map: Vec<Vec<Tile>> = Vec::new();
+    let mut row: Vec<Tile> = Vec::new();
+    row.resize(max_x as usize, Tile::Empty);
+    map.resize(max_y as usize, row);
+
+    let mut score = 0;
+
+    processor.state = State::Running;
     while processor.state != State::Halted {
         processor.run_program();
         if processor.state == State::Halted {
@@ -436,51 +377,31 @@ fn main() {
         let y: i64 = processor.output.expect("No turn_direction output");
 
         processor.run_program();
-        // let tile_id: Tile = processor.output.expect("No turn_direction output").try_into().unwrap();
         let tile_id: i64 = processor.output.expect("No turn_direction output");
 
-        if tile_id == 3 {
-            // paddle_x = x;
-            // paddle_y = y;
-            processor.paddle_x = x;
-            processor.paddle_y = y;
-        }
-
-        if tile_id == 4 {
-            processor.ball_x = x;
-            processor.ball_y = y;
-            // ball_x = x;
-            // ball_y = y;
-        }
-
-        println!("{} {}: {}", x, y, tile_id);
-        // println!("paddle: {} {}", paddle_x, paddle_y);
-        // println!("ball: {} {}", ball_x, ball_y);
         if x == -1 && y == 0 {
-            println!("score: {}", tile_id);
+            score = tile_id;
         } else {
-            let offset = (y * 38 + x) as usize;
-            image[offset] = tile_id;
-        }
+            let tile: Tile = tile_id.try_into().unwrap_or_else(|err| {
+                eprintln!("{}: {}", err, tile_id);
+                panic!();
+            });
 
-        for y in 0..21 {
-            for x in 0..38 {
-                let offset = (y * 38 + x) as usize;
-                // image[offset] = 0;
-                print!("{}", image[offset]);
+            if tile == Tile::Paddle {
+                processor.paddle_x = x;
+                processor.paddle_y = y;
             }
-            println!();
+
+            if tile == Tile::Ball {
+                processor.ball_x = x;
+                processor.ball_y = y;
+            }
+
+            map[y as usize][x as usize] = tile;
         }
     }
 
-    for y in 0..21 {
-        for x in 0..38 {
-            let offset = (y * 38 + x) as usize;
-            // image[offset] = 0;
-            print!("{}", image[offset]);
-        }
-        println!();
-    }
+    println!("Part 2 (score): {}", score);
 }
 
 fn load_code<T>(filename: T) -> Vec<i64>
@@ -515,6 +436,5 @@ fn read_from_stdin() -> i64 {
     io::stdin().read_line(&mut buffer).unwrap();
     let trimmed = buffer.trim();
 
-    // trimmed.parse().expect("Couldn't parse input as i64")
-    0
+    trimmed.parse().expect("Couldn't parse input as i64")
 }
