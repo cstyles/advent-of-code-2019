@@ -100,7 +100,7 @@ impl Processor {
         Self {
             pc: 0,
             code,
-            state: State::Halted,
+            state: State::Running,
             inputs: VecDeque::new(),
             output: None,
             relative_base: 0,
@@ -322,7 +322,6 @@ fn part1(code: Vec<i64>) -> (i64, i64) {
     let mut max_y = 0;
     let mut blocks = 0;
 
-    processor.state = State::Running;
     while processor.state != State::Halted {
         processor.run_program();
 
