@@ -10,6 +10,7 @@ enum State {
     Running,
     Halted,
     Yielded,
+    PromptForInput,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -188,22 +189,20 @@ impl Processor {
                 self.pc += 4;
             }
             Command::Input => {
-                let address = self.get_address(0, instruction.param_modes[0]);
-
-                let num = if self.ball_x < self.paddle_x {
-                    -1
-                } else if self.ball_x > self.paddle_x {
-                    1
+                if self.inputs.len() == 0 {
+                    self.state = State::PromptForInput;
                 } else {
-                    0
-                };
+                    self.state = State::Running;
 
-                // let num = prompt_for_input();
-                // let num = self.inputs.pop_front().expect("`inputs` is empty");
+                    let address = self.get_address(0, instruction.param_modes[0]);
 
-                self.code[address] = num;
+                    // let num = prompt_for_input();
+                    let num = self.inputs.pop_front().expect("`inputs` is empty");
 
-                self.pc += 2;
+                    self.code[address] = num;
+
+                    self.pc += 2;
+                }
             }
             Command::Output => {
                 let r0 = self.get_param(0, instruction.param_modes[0]);
