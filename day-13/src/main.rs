@@ -90,10 +90,6 @@ struct Processor {
     inputs: VecDeque<i64>,
     output: Option<i64>,
     relative_base: i64,
-    ball_x: i64,
-    ball_y: i64,
-    paddle_x: i64,
-    paddle_y: i64,
 }
 
 impl Processor {
@@ -105,10 +101,6 @@ impl Processor {
             inputs: VecDeque::new(),
             output: None,
             relative_base: 0,
-            ball_x: 0,
-            ball_y: 0,
-            paddle_x: 0,
-            paddle_y: 0,
         }
     }
 
@@ -362,12 +354,25 @@ fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
     map.resize(max_y as usize, row);
 
     let mut score = 0;
+    let mut paddle_x = 0;
+    let mut ball_x = 0;
 
     processor.state = State::Running;
     while processor.state != State::Halted {
         processor.run_program();
         if processor.state == State::Halted {
             break;
+        } else if processor.state == State::PromptForInput {
+            let num = if ball_x < paddle_x {
+                -1
+            } else if ball_x > paddle_x {
+                1
+            } else {
+                0
+            };
+
+            processor.inputs.push_back(num);
+            processor.run_program();
         }
 
         let x: i64 = processor.output.expect("No color_to_paint output");
@@ -387,13 +392,11 @@ fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
             });
 
             if tile == Tile::Paddle {
-                processor.paddle_x = x;
-                processor.paddle_y = y;
+                paddle_x = x;
             }
 
             if tile == Tile::Ball {
-                processor.ball_x = x;
-                processor.ball_y = y;
+                ball_x = x;
             }
 
             map[y as usize][x as usize] = tile;
