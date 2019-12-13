@@ -1,9 +1,12 @@
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+use std::thread;
+use std::time;
 
 #[derive(Debug, PartialEq)]
 enum State {
@@ -181,7 +184,7 @@ impl Processor {
                 self.pc += 4;
             }
             Command::Input => {
-                if self.inputs.len() == 0 {
+                if self.inputs.is_empty() {
                     self.state = State::PromptForInput;
                 } else {
                     self.state = State::Running;
@@ -272,6 +275,22 @@ enum Tile {
     Ball,
 }
 
+impl std::fmt::Display for Tile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Tile::Empty => " ",
+                Tile::Wall => "█",
+                Tile::Block => "▒",
+                Tile::Paddle => "▔",
+                Tile::Ball => "O",
+            }
+        )
+    }
+}
+
 impl TryFrom<i64> for Tile {
     type Error = &'static str;
 
@@ -290,9 +309,10 @@ impl TryFrom<i64> for Tile {
 fn main() {
     let file_name = env::args().nth(1).expect("Please provide input file");
     let code = load_code(file_name);
+    let debug = env::args().any(|arg| arg == "--debug");
 
     let (max_x, max_y) = part1(code.clone());
-    part2(code.clone(), max_x, max_y);
+    part2(code.clone(), max_x, max_y, debug);
 }
 
 fn part1(code: Vec<i64>) -> (i64, i64) {
@@ -301,8 +321,6 @@ fn part1(code: Vec<i64>) -> (i64, i64) {
     let mut max_x = 0;
     let mut max_y = 0;
     let mut blocks = 0;
-
-    processor.inputs.push_back(0);
 
     processor.state = State::Running;
     while processor.state != State::Halted {
@@ -343,7 +361,7 @@ fn part1(code: Vec<i64>) -> (i64, i64) {
     (max_x + 1, max_y + 1)
 }
 
-fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
+fn part2(code: Vec<i64>, max_x: i64, max_y: i64, debug: bool) {
     let mut processor = Processor::new(code);
     processor.code[0] = 2; // Insert two coins to play for free!
 
@@ -373,6 +391,12 @@ fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
 
             processor.inputs.push_back(num);
             processor.run_program();
+
+            if debug {
+                thread::sleep(time::Duration::from_millis(100));
+                print_map(&map);
+                println!();
+            }
         }
 
         let x: i64 = processor.output.expect("No color_to_paint output");
@@ -404,6 +428,15 @@ fn part2(code: Vec<i64>, max_x: i64, max_y: i64) {
     }
 
     println!("Part 2 (score): {}", score);
+}
+
+fn print_map(map: &[Vec<Tile>]) {
+    for row in map {
+        for tile in row {
+            print!("{}", tile);
+        }
+        println!();
+    }
 }
 
 fn load_code<T>(filename: T) -> Vec<i64>
