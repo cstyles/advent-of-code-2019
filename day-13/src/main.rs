@@ -89,6 +89,10 @@ struct Processor {
     inputs: VecDeque<i64>,
     output: Option<i64>,
     relative_base: i64,
+    ball_x: i64,
+    ball_y: i64,
+    paddle_x: i64,
+    paddle_y: i64,
 }
 
 impl Processor {
@@ -100,6 +104,10 @@ impl Processor {
             inputs: VecDeque::new(),
             output: None,
             relative_base: 0,
+            ball_x: 0,
+            ball_y: 0,
+            paddle_x: 0,
+            paddle_y: 0,
         }
     }
 
@@ -182,8 +190,17 @@ impl Processor {
             Command::Input => {
                 let address = self.get_address(0, instruction.param_modes[0]);
 
-                // let num = prompt_for_input();
-                let num = self.inputs.pop_front().expect("`inputs` is empty");
+                println!("paddle: {} {}", self.paddle_x, self.paddle_y);
+                println!("ball: {} {}", self.ball_x, self.ball_y);
+                let num = if self.ball_x < self.paddle_x { 
+                    -1
+                } else if self.ball_x > self.paddle_x {
+                    1
+                } else {
+                    0
+                };
+                // let _ = prompt_for_input();
+                // let num = self.inputs.pop_front().expect("`inputs` is empty");
 
                 self.code[address] = num;
 
@@ -375,13 +392,13 @@ fn main() {
 
     let mut processer = Processor::new(code);
 
-    let initial_input = match part {
-        1 => 0,
-        2 => 1,
-        _ => panic!("Not a valid part!"),
-    };
+    // let initial_input = match part {
+    //     1 => 0,
+    //     2 => 1,
+    //     _ => panic!("Not a valid part!"),
+    // };
 
-    processer.inputs.push_back(initial_input);
+    // processer.inputs.push_back(initial_input);
 
     // let mut x: i32 = 0;
     // let mut y: i32 = 0;
@@ -400,6 +417,13 @@ fn main() {
     // }
 
     processer.state = State::Running;
+    processer.code[0] = 2;
+
+    // let mut paddle_x = 0;
+    // let mut paddle_y = 0;
+    // let mut ball_x = 0;
+    // let mut ball_y = 0;
+
     while processer.state != State::Halted {
         processer.run_program();
         if processer.state == State::Halted {
@@ -415,14 +439,38 @@ fn main() {
         // let tile_id: Tile = processer.output.expect("No turn_direction output").try_into().unwrap();
         let tile_id: i64 = processer.output.expect("No turn_direction output");
 
-        let offset = (y * 38 + x) as usize;
-        // match image[offset] {
-        //     1 => {}, // wall = noop
-        //     2 => {}
-        // }
-        image[offset] = tile_id;
+        if tile_id == 3 {
+            // paddle_x = x;
+            // paddle_y = y;
+            processer.paddle_x = x;
+            processer.paddle_y = y;
+        }
 
-        // println!("{} {}: {}", x, y, tile_id);
+        if tile_id == 4 {
+            processer.ball_x = x;
+            processer.ball_y = y;
+            // ball_x = x;
+            // ball_y = y;
+        }
+
+        println!("{} {}: {}", x, y, tile_id);
+        // println!("paddle: {} {}", paddle_x, paddle_y);
+        // println!("ball: {} {}", ball_x, ball_y);
+        if x == -1 && y == 0 {
+            println!("score: {}", tile_id);
+        } else {
+            let offset = (y * 38 + x) as usize;
+            image[offset] = tile_id;
+        }
+
+        for y in 0..21 {
+            for x in 0..38 {
+                let offset = (y * 38 + x) as usize;
+                // image[offset] = 0;
+                print!("{}", image[offset]);
+            }
+            println!();
+        }
     }
 
     for y in 0..21 {
@@ -467,5 +515,6 @@ fn read_from_stdin() -> i64 {
     io::stdin().read_line(&mut buffer).unwrap();
     let trimmed = buffer.trim();
 
-    trimmed.parse().expect("Couldn't parse input as i64")
+    // trimmed.parse().expect("Couldn't parse input as i64")
+    0
 }
