@@ -312,7 +312,7 @@ fn main() {
     let debug = env::args().any(|arg| arg == "--debug");
 
     let (max_x, max_y) = part1(code.clone());
-    part2(code.clone(), max_x, max_y, debug);
+    part2(code, max_x, max_y, debug);
 }
 
 fn part1(code: Vec<i64>) -> (i64, i64) {
