@@ -339,6 +339,30 @@ impl Into<char> for Color {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Tile {
+    Empty,
+    Wall,
+    Block,
+    Paddle,
+    Ball,
+}
+
+impl TryFrom<i64> for Tile {
+    type Error = &'static str;
+
+    fn try_from(number: i64) -> Result<Self, Self::Error> {
+        match number {
+            0 => Ok(Tile::Empty),
+            1 => Ok(Tile::Wall),
+            2 => Ok(Tile::Block),
+            3 => Ok(Tile::Paddle),
+            4 => Ok(Tile::Ball),
+            _ => Err("Unrecognized tile"),
+        }
+    }
+}
+
 fn main() {
     let part: i32 = env::args()
         .nth(1)
@@ -359,11 +383,21 @@ fn main() {
 
     processer.inputs.push_back(initial_input);
 
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
-    let mut facing: Direction = Up;
-    let mut grid: HashMap<(i32, i32), Color> = HashMap::new();
-    let mut total_painted = 0;
+    // let mut x: i32 = 0;
+    // let mut y: i32 = 0;
+    // let mut facing: Direction = Up;
+    // let mut grid: HashMap<(i32, i32), Color> = HashMap::new();
+    // let mut total_painted = 0;
+
+    // let mut image: Vec<i64> = Vec::new();
+
+    let mut image: [i64; 798] = [0; 798];
+    // for y in 0..21 {
+    //     for x in 0..38 {
+    //         let offset = (y * 38 + x) as usize;
+    //         image[offset] = 0;
+    //     }
+    // }
 
     processer.state = State::Running;
     while processer.state != State::Halted {
@@ -372,55 +406,31 @@ fn main() {
             break;
         }
 
-        let color_to_paint: Color = processer.output.expect("No color_to_paint output").into();
+        let x: i64 = processer.output.expect("No color_to_paint output");
 
         processer.run_program();
-        let turn_direction: Direction = processer.output.expect("No turn_direction output").into();
+        let y: i64 = processer.output.expect("No turn_direction output");
 
-        if !grid.contains_key(&(x, y)) {
-            total_painted += 1;
-        }
+        processer.run_program();
+        // let tile_id: Tile = processer.output.expect("No turn_direction output").try_into().unwrap();
+        let tile_id: i64 = processer.output.expect("No turn_direction output");
 
-        grid.insert((x, y), color_to_paint);
-        facing = facing.turn(turn_direction);
+        let offset = (y * 38 + x) as usize;
+        // match image[offset] {
+        //     1 => {}, // wall = noop
+        //     2 => {}
+        // }
+        image[offset] = tile_id;
 
-        match facing {
-            Up => y -= 1,
-            Down => y += 1,
-            Left => x -= 1,
-            Right => x += 1,
-        }
-
-        let current_color: Color = *grid.get(&(x, y)).unwrap_or(&Black);
-        processer.inputs.push_back(current_color.into());
+        // println!("{} {}: {}", x, y, tile_id);
     }
 
-    if part == 1 {
-        println!("total_painted: {}", total_painted);
-        return;
-    }
-
-    // ==== Part 2 ====
-
-    let max_x = (grid.keys().map(|key| key.0).max().unwrap() + 1) as usize;
-    let max_y = (grid.keys().map(|key| key.1).max().unwrap() + 1) as usize;
-
-    let mut image: Vec<Vec<char>> = Vec::new();
-    let mut row: Vec<char> = Vec::new();
-    row.resize(max_x, ' ');
-    image.resize(max_y, row);
-
-    for (coords, color) in grid {
-        let x = coords.0 as usize;
-        let y = coords.1 as usize;
-        image[y][x] = color.into();
-    }
-
-    for y in 0..max_y {
-        for x in 0..max_x {
-            print!("{}", image[y][x]);
+    for y in 0..21 {
+        for x in 0..38 {
+            let offset = (y * 38 + x) as usize;
+            // image[offset] = 0;
+            print!("{}", image[offset]);
         }
-
         println!();
     }
 }
