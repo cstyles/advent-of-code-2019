@@ -32,49 +32,64 @@ fn main() {
     }
 
     let mut total_ore_needed = 0;
+    let mut i = 0;
 
-    while !queue.is_empty() {
-        let chem_quant: ChemQuant = queue.pop_front().expect("queue was empty");
-        let amount_needed = chem_quant.quantity;
-        let amount_already_produced = amounts_produced.get(&chem_quant.chemical).unwrap_or(&0);
-        let amount_to_make = amount_needed - amount_already_produced;
+    while total_ore_needed < 1_000_000_000_000 {
+        while !queue.is_empty() {
+            let chem_quant: ChemQuant = queue.pop_front().expect("queue was empty");
+            let amount_needed = chem_quant.quantity;
+            let amount_already_produced = amounts_produced.get(&chem_quant.chemical).unwrap_or(&0);
+            let amount_to_make = amount_needed - amount_already_produced;
 
-        println!("Make {} of {}, already have {} so only need {}",
-            amount_needed,
-            chem_quant.chemical,
-            amount_already_produced,
-            amount_to_make
-        );
+            // println!("Make {} of {}, already have {} so only need {}",
+                // amount_needed,
+                // chem_quant.chemical,
+                // amount_already_produced,
+                // amount_to_make
+            // );
 
-        if amount_to_make <= 0 {
-            println!("just using what we have");
-            amounts_produced.insert(
-                chem_quant.chemical.clone(),
-                -amount_to_make,
-            );
-        } else if chem_quant.chemical == "ORE" {
-            total_ore_needed += amount_to_make;
-        } else {
-            let (output_produced, inputs) = reactions.get(&chem_quant.chemical).expect("no entry in reactions for chemical");
-            let reaction_times = min_needed(amount_to_make, *output_produced);
-
-            println!("Reaction makes {} so will run {} times", *output_produced, reaction_times);
-
-            for input in inputs {
-                let new_item = ChemQuant {
-                    chemical: input.chemical.clone(),
-                    quantity: input.quantity * reaction_times,
-                };
-
+            if amount_to_make <= 0 {
+                // println!("just using what we have");
                 amounts_produced.insert(
                     chem_quant.chemical.clone(),
-                    reaction_times * *output_produced - amount_to_make,
+                    -amount_to_make,
                 );
-                queue.push_back(new_item);
+            } else if chem_quant.chemical == "ORE" {
+                total_ore_needed += amount_to_make;
+            } else {
+                let (output_produced, inputs) = reactions.get(&chem_quant.chemical).expect("no entry in reactions for chemical");
+                let reaction_times = min_needed(amount_to_make, *output_produced);
+
+                // println!("Reaction makes {} so will run {} times", *output_produced, reaction_times);
+
+                for input in inputs {
+                    let new_item = ChemQuant {
+                        chemical: input.chemical.clone(),
+                        quantity: input.quantity * reaction_times,
+                    };
+
+                    amounts_produced.insert(
+                        chem_quant.chemical.clone(),
+                        reaction_times * *output_produced - amount_to_make,
+                    );
+                    queue.push_back(new_item);
+                }
             }
+
+            // println!();
         }
 
-        println!();
+        i += 1;
+        println!("Made {} FUEL", i);
+        println!("total_ore_needed: {}", total_ore_needed);
+
+        let (_, fuel_inputs): &(i64, Vec<ChemQuant>) = reactions.get(
+            &env::args().nth(2).expect("Please provide a chemical")
+        ).unwrap();
+
+        for input in fuel_inputs {
+            queue.push_back(input.clone());
+        }
     }
 
     println!("Total ORE needed: {}", total_ore_needed);
